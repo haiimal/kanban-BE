@@ -1,61 +1,49 @@
-// Import Supabase client
-import supabase from '../config/database.js';
+// controllers/projectController.js
 
-// ===============================
 // Ambil semua project
-// ===============================
-export const getAllProjects = async (req, res) => {
-  const { data, error } = await supabase.from('project').select('*');
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+const getAllProjects = async (req, res) => {
+  console.log("GET /api/projects hit");
+  const projects = [
+    { id: 1, name: "Project Alpha", description: "Test project 1" },
+    { id: 2, name: "Project Beta", description: "Test project 2" },
+  ];
+  res.json({ message: "Success get all projects", data: projects });
 };
 
-// ===============================
 // Ambil project berdasarkan id
-// ===============================
-export const getProjectById = async (req, res) => {
+const getProjectById = async (req, res) => {
+  console.log("GET /api/projects/:id hit");
   const { id } = req.params;
-  const { data, error } = await supabase.from('project').select('*').eq('id', id).single();
-  if (error) return res.status(404).json({ error: 'Project not found' });
-  res.json(data);
+  const project = { id, name: "Project Alpha", description: "Example project" };
+  res.json({ message: `Success get project with id ${id}`, data: project });
 };
 
-// ===============================
 // Buat project baru
-// ===============================
-export const createProject = async (req, res) => {
+const createProject = async (req, res) => {
+  console.log("POST /api/projects hit");
   const { name, description } = req.body;
-  const { data, error } = await supabase
-    .from('project')
-    .insert([{ name, description }])
-    .select()
-    .single();
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+  res.status(201).json({
+    message: "Project created (dummy)",
+    data: { id: 999, name, description },
+  });
 };
 
-// ===============================
 // Update project
-// ===============================
-export const updateProject = async (req, res) => {
+const updateProject = async (req, res) => {
+  console.log("PUT /api/projects/:id hit");
   const { id } = req.params;
   const { name, description } = req.body;
-  const { data, error } = await supabase
-    .from('project')
-    .update({ name, description })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.json({
+    message: `Project ${id} updated (dummy)`,
+    data: { id, name, description },
+  });
 };
 
-// ===============================
 // Hapus project
-// ===============================
-export const deleteProject = async (req, res) => {
+const deleteProject = async (req, res) => {
+  console.log("DELETE /api/projects/:id hit");
   const { id } = req.params;
-  const { error } = await supabase.from('project').delete().eq('id', id);
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Project deleted' });
+  res.json({ message: `Project ${id} deleted (dummy)` });
 };
+
+export { getAllProjects, getProjectById, createProject, updateProject, deleteProject };

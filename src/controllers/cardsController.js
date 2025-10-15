@@ -1,45 +1,36 @@
-// Import Supabase client
-import supabase from '../config/database.js';
+// controllers/cardsController.js
 
-// ===============================
-// Ambil semua cards berdasarkan columns_id
-// ===============================
-export const getAllCards = async (req, res) => {
+// Ambil semua card berdasarkan columns_id
+const getAllCards = async (req, res) => {
+  console.log("GET /api/cards/:columns_id hit");
   const { columns_id } = req.params;
-  const { data, error } = await supabase
-    .from('cards')
-    .select('*')
-    .eq('columns_id', columns_id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  const cards = [
+    { id: 1, columns_id, title: "Buat UI", description: "Desain halaman utama", due_date: "2025-10-20" },
+    { id: 2, columns_id, title: "Setup API", description: "Bikin route project", due_date: "2025-10-22" },
+  ];
+  res.json({
+    message: `Success get all cards for column ${columns_id}`,
+    data: cards,
+  });
 };
 
-// ===============================
 // Buat card baru
-// ===============================
-export const createCard = async (req, res) => {
+const createCard = async (req, res) => {
+  console.log("POST /api/cards hit");
   const { columns_id, title, description, due_date } = req.body;
-  const { data, error } = await supabase
-    .from('cards')
-    .insert([{ columns_id, title, description, due_date }])
-    .select()
-    .single();
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+  res.status(201).json({
+    message: "Card created (dummy)",
+    data: { id: 999, columns_id, title, description, due_date },
+  });
 };
 
-// ===============================
-// Hapus card
-// ===============================
-export const deleteCard = async (req, res) => {
+// Hapus card berdasarkan id
+const deleteCard = async (req, res) => {
+  console.log("DELETE /api/cards/:id hit");
   const { id } = req.params;
-  const { error } = await supabase
-    .from('cards')
-    .delete()
-    .eq('id', id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Card deleted' });
+  res.json({
+    message: `Card ${id} deleted (dummy)`,
+  });
 };
+
+export { getAllCards, createCard, deleteCard };

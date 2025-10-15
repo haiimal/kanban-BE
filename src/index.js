@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 // app.use(clerkMiddleware());              // Clerk auth
 // app.use(clerkIdInjectorWithLogging);      // Inject Clerk ID + request logging
-app.use(performanceLogger);               // Optional: log execution time
+// app.use(performanceLogger);               // Optional: log execution time
 
 // ===============================
 // Health check
@@ -38,7 +38,6 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/project-members', projectMemberRoutes);
 app.use('/api/boards', boardsRoutes);
 app.use('/api/columns', columnsRoutes);
-app.use('/api/cards', cardsRoutes);
 app.use('/api/cards', cardsRoutes);
 
 // ===============================

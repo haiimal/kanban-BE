@@ -1,45 +1,37 @@
-// Import Supabase client
-import supabase from '../config/database.js';
+// controllers/columnsController.js
 
-// ===============================
-// Ambil semua columns berdasarkan boards_id
-// ===============================
-export const getAllColumns = async (req, res) => {
+// Ambil semua column berdasarkan boards_id
+const getAllColumns = async (req, res) => {
+  console.log("GET /api/columns/:boards_id hit");
   const { boards_id } = req.params;
-  const { data, error } = await supabase
-    .from('columns')
-    .select('*')
-    .eq('boards_id', boards_id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  const columns = [
+    { id: 1, boards_id, name: "To Do" },
+    { id: 2, boards_id, name: "In Progress" },
+    { id: 3, boards_id, name: "Done" },
+  ];
+  res.json({
+    message: `Success get all columns for board ${boards_id}`,
+    data: columns,
+  });
 };
 
-// ===============================
 // Buat column baru
-// ===============================
-export const createColumn = async (req, res) => {
+const createColumn = async (req, res) => {
+  console.log("POST /api/columns hit");
   const { boards_id, name } = req.body;
-  const { data, error } = await supabase
-    .from('columns')
-    .insert([{ boards_id, name }])
-    .select()
-    .single();
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+  res.status(201).json({
+    message: "Column created (dummy)",
+    data: { id: 500, boards_id, name },
+  });
 };
 
-// ===============================
-// Hapus column
-// ===============================
-export const deleteColumn = async (req, res) => {
+// Hapus column berdasarkan id
+const deleteColumn = async (req, res) => {
+  console.log("DELETE /api/columns/:id hit");
   const { id } = req.params;
-  const { error } = await supabase
-    .from('columns')
-    .delete()
-    .eq('id', id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Column deleted' });
+  res.json({
+    message: `Column ${id} deleted (dummy)`,
+  });
 };
+
+export { getAllColumns, createColumn, deleteColumn };

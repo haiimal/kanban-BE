@@ -1,45 +1,36 @@
-// Import Supabase client
-import supabase from '../config/database.js';
+// controllers/boardsController.js
 
-// ===============================
-// Ambil semua boards berdasarkan project_id
-// ===============================
-export const getAllBoards = async (req, res) => {
+// Ambil semua board berdasarkan project_id
+const getAllBoards = async (req, res) => {
+  console.log("GET /api/boards/:project_id hit");
   const { project_id } = req.params;
-  const { data, error } = await supabase
-    .from('boards')
-    .select('*')
-    .eq('project_id', project_id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  const boards = [
+    { id: 1, project_id, name: "Board To Do" },
+    { id: 2, project_id, name: "Board In Progress" },
+  ];
+  res.json({
+    message: `Success get all boards for project ${project_id}`,
+    data: boards,
+  });
 };
 
-// ===============================
 // Buat board baru
-// ===============================
-export const createBoard = async (req, res) => {
-  const { project_id } = req.body;
-  const { data, error } = await supabase
-    .from('boards')
-    .insert([{ project_id }])
-    .select()
-    .single();
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+const createBoard = async (req, res) => {
+  console.log("POST /api/boards hit");
+  const { project_id, name } = req.body;
+  res.status(201).json({
+    message: "Board created (dummy)",
+    data: { id: 100, project_id, name },
+  });
 };
 
-// ===============================
-// Hapus board
-// ===============================
-export const deleteBoard = async (req, res) => {
+// Hapus board berdasarkan id
+const deleteBoard = async (req, res) => {
+  console.log("DELETE /api/boards/:id hit");
   const { id } = req.params;
-  const { error } = await supabase
-    .from('boards')
-    .delete()
-    .eq('id', id);
-  
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Board deleted' });
+  res.json({
+    message: `Board ${id} deleted (dummy)`,
+  });
 };
+
+export { getAllBoards, createBoard, deleteBoard };
