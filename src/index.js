@@ -19,9 +19,18 @@ const PORT = process.env.PORT || 3002;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-// app.use(clerkMiddleware());              // Clerk auth
-// app.use(clerkIdInjectorWithLogging);      // Inject Clerk ID + request logging
-// app.use(performanceLogger);               // Optional: log execution time
+
+// Clerk Middleware (auth)
+try {
+  app.use(clerkMiddleware());
+  console.log('Clerk middleware aktif');
+} catch (err) {
+  console.warn('Clerk middleware gagal di-load (dev mode):', err.message);
+}
+
+// Middleware custom
+app.use(clerkIdInjectorWithLogging);  // inject Clerk ID (dari body/header/auth)
+app.use(performanceLogger);           // log durasi request
 
 // ===============================
 // Health check
@@ -47,7 +56,7 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
   });
 });
 
@@ -57,13 +66,11 @@ app.use((req, res) => {
 
 // ===============================
 // Server start
-// Untuk Vercel deployment, export app
 // ===============================
 export default app;
 
-// Untuk development lokal, jalankan server
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
   });
 }
