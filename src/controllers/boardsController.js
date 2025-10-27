@@ -1,19 +1,13 @@
-import supabase from "../config/database.js";
+// src/controllers/boardsController.js
+import * as boardsService from "../services/boardsService.js";
 
 // Ambil semua board berdasarkan project_id
-const getBoardsByProject = async (req, res) => {
+export const getBoardsByProject = async (req, res) => {
   console.log("GET /api/boards/:project_id hit");
   const { project_id } = req.params;
 
   try {
-    const { data, error } = await supabase
-      .from("boards")
-      .select("*")
-      .eq("project_id", project_id)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
-
+    const data = await boardsService.getBoardsByProject(project_id);
     res.json({
       message: `Success get all boards for project ${project_id}`,
       data,
@@ -25,82 +19,50 @@ const getBoardsByProject = async (req, res) => {
 };
 
 // Tambah board baru di project tertentu
-const createBoard = async (req, res) => {
+export const createBoard = async (req, res) => {
   console.log("POST /api/boards hit");
   const { project_id, name } = req.body;
 
   try {
-    if (!project_id || !name) {
-      return res.status(400).json({ error: "project_id dan name wajib diisi" });
-    }
-
-    const { data, error } = await supabase
-      .from("boards")
-      .insert([
-        {
-          project_id,
-          name,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
+    const data = await boardsService.createBoard(project_id, name);
     res.status(201).json({
       message: "Board created successfully",
       data,
     });
   } catch (err) {
     console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal membuat board" });
+    res.status(400).json({ error: err.message });
   }
 };
 
 // Edit nama board
-const updateBoard = async (req, res) => {
+export const updateBoard = async (req, res) => {
   console.log("PUT /api/boards/:id hit");
   const { id } = req.params;
   const { name } = req.body;
 
   try {
-    const { data, error } = await supabase
-      .from("boards")
-      .update({ name })
-      .eq("id", id)
-      .select();
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: "Board tidak ditemukan" });
-    }
-
+    const data = await boardsService.updateBoard(id, name);
     res.json({
       message: `Board ${id} updated successfully`,
-      data: data[0],
+      data,
     });
   } catch (err) {
     console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal mengupdate board" });
+    res.status(400).json({ error: err.message });
   }
 };
 
 // Hapus board berdasarkan id
-const deleteBoard = async (req, res) => {
+export const deleteBoard = async (req, res) => {
   console.log("DELETE /api/boards/:id hit");
   const { id } = req.params;
 
   try {
-    const { error } = await supabase.from("boards").delete().eq("id", id);
-    if (error) throw error;
-
+    await boardsService.deleteBoard(id);
     res.json({ message: `Board ${id} deleted successfully` });
   } catch (err) {
     console.error("Supabase Error:", err.message);
     res.status(500).json({ error: "Gagal menghapus board" });
   }
 };
-
-export { getBoardsByProject, createBoard, updateBoard, deleteBoard };

@@ -1,36 +1,19 @@
-// Import Router dari Express
-import { Router } from 'express';
-
-// Import controller functions
+// src/routes/projectRoutes.js
+import { Router } from "express";
 import {
   getAllProjects,
   getProjectById,
   createProject,
   updateProject,
-  deleteProject
-} from '../controllers/projectController.js';
+  deleteProject,
+} from "../controllers/projectController.js";
 
-// Buat router baru
 const router = Router();
 
-// ===============================
-// Routes CRUD projects
-// ===============================
+router.get("/", getAllProjects);
+router.get("/:id", getProjectById);
+router.post("/", createProject);
+router.put("/:id", updateProject);
+router.delete("/:id", deleteProject);
 
-// Ambil semua projects
-router.get('/', getAllProjects);
-
-// Ambil project berdasarkan id
-router.get('/:id', getProjectById);
-
-// Buat project baru
-router.post('/', createProject);
-
-// Update project berdasarkan id
-router.put('/:id', updateProject);
-
-// Hapus project berdasarkan id
-router.delete('/:id', deleteProject);
-
-// Export router sebagai default
 export default router;
