@@ -1,28 +1,16 @@
-// Import Router dari Express
-import { Router } from 'express';
-
-// Import controller functions
+import { Router } from "express";
 import {
-  getAllColumns,
+  getColumnsByBoard,
   createColumn,
-  deleteColumn
-} from '../controllers/columnsController.js';
+  updateColumn,
+  deleteColumn,
+} from "../controllers/columnsController.js";
 
-// Buat router baru
 const router = Router();
 
-// ===============================
-// Routes columns
-// ===============================
+router.get("/:boards_id", getColumnsByBoard); // ambil semua columns di board
+router.post("/", createColumn);               // buat column baru
+router.put("/:id", updateColumn);             // update nama column
+router.delete("/:id", deleteColumn);          // hapus column
 
-// Ambil semua columns berdasarkan boards_id
-router.get('/:boards_id', getAllColumns);
-
-// Buat column baru
-router.post('/', createColumn);
-
-// Hapus column berdasarkan id
-router.delete('/:id', deleteColumn);
-
-// Export router sebagai default
 export default router;

@@ -1,28 +1,16 @@
-// Import Router dari Express
-import { Router } from 'express';
-
-// Import controller functions
+import { Router } from "express";
 import {
-  getAllCards,
+  getCardsByColumn,
   createCard,
-  deleteCard
-} from '../controllers/cardsController.js';
+  updateCard,
+  deleteCard,
+} from "../controllers/cardsController.js";
 
-// Buat router baru
 const router = Router();
 
-// ===============================
-// Routes cards
-// ===============================
+router.get("/:columns_id", getCardsByColumn); // ambil semua cards berdasarkan column
+router.post("/", createCard);                 // buat card baru
+router.put("/:id", updateCard);               // update card
+router.delete("/:id", deleteCard);            // hapus card
 
-// Ambil semua cards berdasarkan columns_id
-router.get('/:columns_id', getAllCards);
-
-// Buat card baru
-router.post('/', createCard);
-
-// Hapus card berdasarkan id
-router.delete('/:id', deleteCard);
-
-// Export router sebagai default
 export default router;
