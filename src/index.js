@@ -32,6 +32,15 @@ try {
 app.use(clerkIdInjectorWithLogging);  // inject Clerk ID (dari body/header/auth)
 app.use(performanceLogger);           // log durasi request
 
+
+// ===============================
+// Root Route (Test for Vercel)
+// ===============================
+app.get("/", (req, res) => {
+  res.send("🚀 Kanban API is running successfully on Vercel!");
+});
+
+
 // ===============================
 // Health check
 // ===============================
