@@ -37,7 +37,7 @@ app.use(performanceLogger);           // log durasi request
 // Root Route (Test for Vercel)
 // ===============================
 app.get("/", (req, res) => {
-  res.send("🚀 Kanban API is running successfully on Vercel!");
+  res.send("Kanban API is running successfully on Vercel!");
 });
 
 
