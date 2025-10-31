@@ -2,12 +2,12 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
+import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import projectMemberRoutes from "./routes/projectMemberRoutes.js";
 import boardsRoutes from "./routes/boardsRoutes.js";
 import columnsRoutes from "./routes/columnsRoutes.js";
 import cardsRoutes from "./routes/cardsRoutes.js";
-import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -17,7 +17,17 @@ const PORT = process.env.PORT || 3002;
 // ===============================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // saat dev lokal
+      "https://kanban-fe.vercel.app", // ganti ini ke domain frontend lu di vercel
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
+    credentials: true,
+  })
+);
 
 // ===============================
 // Clerk Authentication Middleware
@@ -25,7 +35,7 @@ app.use(cors());
 // ===============================
 try {
 app.use(clerkMiddleware());
-console.log("✅ Clerk middleware aktif");
+console.log("Clerk middleware aktif");
 } catch (err) {
 console.warn(" Clerk middleware gagal di-load (dev mode):", err.message);
 }
