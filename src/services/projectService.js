@@ -20,14 +20,28 @@ export const getProjectById = async (id) => {
     .eq("id", id)
     .single();
 
-  if (error) throw new Error("Project tidak ditemukan");
+  if (error) {
+    const err = new Error("Project tidak ditemukan");
+    err.statusCode = 404;
+    throw err;
+  }
+
   return data;
 };
 
-// Buat project baru + otomatis tambah ke project_member dan boards
+// Buat project baru + tambah member + board default
 export const createProject = async (name, description, clerkId) => {
-  if (!name) throw new Error("Nama project wajib diisi");
-  if (!clerkId) throw new Error("Clerk ID tidak ditemukan di header");
+  if (!name) {
+    const err = new Error("Nama project wajib diisi");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!clerkId) {
+    const err = new Error("User belum terautentikasi dengan Clerk");
+    err.statusCode = 401;
+    throw err;
+  }
 
   // Insert project
   const { data: project, error: projectError } = await supabase
@@ -35,6 +49,7 @@ export const createProject = async (name, description, clerkId) => {
     .insert([{ name, description, created_at: new Date().toISOString() }])
     .select()
     .single();
+
   if (projectError) throw new Error(projectError.message);
 
   // Tambah admin ke project_member
@@ -70,13 +85,22 @@ export const updateProject = async (id, name, description) => {
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const err = new Error("Gagal mengupdate project");
+    err.statusCode = 400;
+    throw err;
+  }
+
   return data;
 };
 
 // Hapus project
 export const deleteProject = async (id) => {
   const { error } = await supabase.from("project").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    const err = new Error("Gagal menghapus project");
+    err.statusCode = 400;
+    throw err;
+  }
   return true;
 };

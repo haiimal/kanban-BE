@@ -8,9 +8,9 @@ import {
 
 const router = Router();
 
-router.get("/:columns_id", getCardsByColumn); // ambil semua cards berdasarkan column
-router.post("/", createCard);                 // buat card baru
-router.put("/:id", updateCard);               // update card
-router.delete("/:id", deleteCard);            // hapus card
+router.get("/:columns_id", getCardsByColumn);
+router.post("/", createCard);
+router.put("/:id", updateCard);
+router.delete("/:id", deleteCard);
 
 export default router;

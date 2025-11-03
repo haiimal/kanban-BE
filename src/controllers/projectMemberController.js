@@ -1,35 +1,36 @@
-// src/controllers/projectMemberController.js
 import * as projectMemberService from "../services/projectMemberService.js";
 
-// GET all members
+//  Ambil semua member dalam project
 export const getAllMembers = async (req, res) => {
-  console.log("GET/api/project-members/:project_id hit");
+  console.log("GET /api/project-members/:project_id hit");
   const { project_id } = req.params;
 
   try {
     const data = await projectMemberService.getAllMembers(project_id);
-    res.json({
-      message: `Success get all members for project ${project_id}`,
+    res.status(200).json({
+      success: true,
+      message: `Berhasil mengambil semua member untuk project ${project_id}`,
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal mengambil data member" });
+    console.error("Error getAllMembers:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// POST add member
+//  Tambah member baru ke project
 export const addMember = async (req, res) => {
   console.log("POST /api/project-members hit");
+
   try {
-    const headerClerkId = req.headers["x-clerk-id"];
     const { project_id, clerk_user_id, role } = req.body;
-    const finalClerkId = headerClerkId || clerk_user_id;
+    const finalClerkId = req.clerkId || clerk_user_id; // ambil dari token Clerk middleware
 
     if (!finalClerkId) {
-      return res
-        .status(400)
-        .json({ error: "Clerk ID tidak ditemukan (dari header atau body)." });
+      return res.status(400).json({
+        success: false,
+        error: "Clerk ID tidak ditemukan (dari token atau body).",
+      });
     }
 
     const data = await projectMemberService.addMember(
@@ -39,25 +40,29 @@ export const addMember = async (req, res) => {
     );
 
     res.status(201).json({
-      message: "Project member added successfully",
+      success: true,
+      message: "Berhasil menambahkan member ke project",
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(400).json({ error: err.message });
+    console.error("Error addMember:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// DELETE member
+//  Hapus member dari project
 export const removeMember = async (req, res) => {
   console.log("DELETE /api/project-members/:id hit");
   const { id } = req.params;
 
   try {
     await projectMemberService.removeMember(id);
-    res.json({ message: `Member ${id} removed successfully` });
+    res.status(200).json({
+      success: true,
+      message: `Member ${id} berhasil dihapus dari project`,
+    });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal menghapus member" });
+    console.error("Error removeMember:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };

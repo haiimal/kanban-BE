@@ -1,68 +1,86 @@
 // src/controllers/boardsController.js
 import * as boardsService from "../services/boardsService.js";
 
-// Ambil semua board berdasarkan project_id
+// GET semua board berdasarkan project_id
 export const getBoardsByProject = async (req, res) => {
-  console.log("GET /api/boards/:project_id hit");
   const { project_id } = req.params;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     const data = await boardsService.getBoardsByProject(project_id);
-    res.json({
-      message: `Success get all boards for project ${project_id}`,
+    res.status(200).json({
+      success: true,
+      message: `Berhasil mengambil semua board untuk project ${project_id}`,
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal mengambil data boards" });
+    console.error("Error getBoardsByProject:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Tambah board baru di project tertentu
+// POST tambah board baru
 export const createBoard = async (req, res) => {
-  console.log("POST /api/boards hit");
   const { project_id, name } = req.body;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     const data = await boardsService.createBoard(project_id, name);
     res.status(201).json({
-      message: "Board created successfully",
+      success: true,
+      message: "Board berhasil dibuat",
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(400).json({ error: err.message });
+    console.error("Error createBoard:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// Edit nama board
+// PUT update nama board
 export const updateBoard = async (req, res) => {
-  console.log("PUT /api/boards/:id hit");
   const { id } = req.params;
   const { name } = req.body;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     const data = await boardsService.updateBoard(id, name);
-    res.json({
-      message: `Board ${id} updated successfully`,
+    res.status(200).json({
+      success: true,
+      message: `Board ${id} berhasil diperbarui`,
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(400).json({ error: err.message });
+    console.error("Error updateBoard:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// Hapus board berdasarkan id
+// DELETE board
 export const deleteBoard = async (req, res) => {
-  console.log("DELETE /api/boards/:id hit");
   const { id } = req.params;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     await boardsService.deleteBoard(id);
-    res.json({ message: `Board ${id} deleted successfully` });
+    res.status(200).json({
+      success: true,
+      message: `Board ${id} berhasil dihapus`,
+    });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal menghapus board" });
+    console.error("Error deleteBoard:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 };

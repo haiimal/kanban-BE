@@ -1,79 +1,98 @@
+// src/controllers/cardsController.js
 import * as cardsService from "../services/cardsService.js";
 
-// GET all cards by columns_id
+//  GET semua cards berdasarkan columns_id
 export const getCardsByColumn = async (req, res) => {
-  console.log("GET /api/cards/:columns_id hit");
   const { columns_id } = req.params;
 
   try {
+    // pastikan user login
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     const data = await cardsService.getCardsByColumn(columns_id);
-    res.json({
-      message: `Success get all cards for column ${columns_id}`,
+    res.status(200).json({
+      success: true,
+      message: `Berhasil mengambil semua cards untuk column ${columns_id}`,
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal mengambil data cards" });
+    console.error("Error getCardsByColumn:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// POST create card
+//  POST buat card baru
 export const createCard = async (req, res) => {
-  console.log("POST /api/cards hit");
   const { columns_id, title, description, due_date } = req.body;
 
   try {
-    const data = await cardsService.createCard(
-      columns_id,
-      title,
-      description,
-      due_date
-    );
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
+    if (!columns_id || !title) {
+      return res.status(400).json({ error: "columns_id dan title wajib diisi." });
+    }
+
+    const data = await cardsService.createCard(columns_id, title, description, due_date);
     res.status(201).json({
-      message: "Card created successfully",
+      success: true,
+      message: "Card berhasil dibuat",
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(400).json({ error: err.message });
+    console.error("Error createCard:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// PUT update card
+//  PUT update card
 export const updateCard = async (req, res) => {
-  console.log("PUT /api/cards/:id hit");
   const { id } = req.params;
   const { title, description, due_date, columns_id } = req.body;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     const fieldsToUpdate = {
       ...(title && { title }),
       ...(description && { description }),
       ...(due_date && { due_date }),
-      ...(columns_id && { columns_id }), // buat pindahin card ke column lain
+      ...(columns_id && { columns_id }), // kalau mau pindah column
     };
 
     const data = await cardsService.updateCard(id, fieldsToUpdate);
-    res.json({
-      message: `Card ${id} updated successfully`,
+    res.status(200).json({
+      success: true,
+      message: `Card ${id} berhasil diperbarui`,
       data,
     });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal mengupdate card" });
+    console.error("Error updateCard:", err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// DELETE card
+//  DELETE card
 export const deleteCard = async (req, res) => {
-  console.log("DELETE /api/cards/:id hit");
   const { id } = req.params;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+    }
+
     await cardsService.deleteCard(id);
-    res.json({ message: `Card ${id} deleted successfully` });
+    res.status(200).json({
+      success: true,
+      message: `Card ${id} berhasil dihapus`,
+    });
   } catch (err) {
-    console.error("Supabase Error:", err.message);
-    res.status(500).json({ error: "Gagal menghapus card" });
+    console.error("Error deleteCard:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 };

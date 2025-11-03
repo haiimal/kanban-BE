@@ -8,9 +8,10 @@ import {
 
 const router = Router();
 
-router.get("/:boards_id", getColumnsByBoard); // ambil semua columns di board
-router.post("/", createColumn);               // buat column baru
-router.put("/:id", updateColumn);             // update nama column
-router.delete("/:id", deleteColumn);          // hapus column
+// Semua route siap pakai middleware Clerk
+router.get("/:boards_id", getColumnsByBoard);
+router.post("/", createColumn);
+router.put("/:id", updateColumn);
+router.delete("/:id", deleteColumn);
 
 export default router;

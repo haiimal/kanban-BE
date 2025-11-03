@@ -1,3 +1,4 @@
+// src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -17,11 +18,13 @@ const PORT = process.env.PORT || 3002;
 // ===============================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// CORS (Frontend lokal & Vercel)
 app.use(
   cors({
     origin: [
-      "http://localhost:3000", // saat dev lokal
-      "https://kanban-fe.vercel.app", // ganti ini ke domain frontend lu di vercel
+      "http://localhost:3000", // dev lokal
+      "https://kanban-fe.vercel.app", // domain frontend di Vercel
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
@@ -30,36 +33,34 @@ app.use(
 );
 
 // ===============================
-// Clerk Authentication Middleware
-// (harus di atas semua route)
+// CLERK AUTHENTICATION
 // ===============================
 try {
-app.use(clerkMiddleware());
-console.log("Clerk middleware aktif");
+  app.use(clerkMiddleware());
+  console.log("Clerk middleware aktif");
 } catch (err) {
-console.warn(" Clerk middleware gagal di-load (dev mode):", err.message);
+  console.warn("Clerk middleware gagal di-load (dev mode):", err.message);
 }
 
 // ===============================
-// Custom Middleware
+// CUSTOM MIDDLEWARE
 // ===============================
 app.use(clerkIdInjectorWithLogging); // inject Clerk ID dari token
-app.use(performanceLogger); // log waktu request
+app.use(performanceLogger); // log durasi request
 
 // ===============================
-// Health Check & Root Route
+// ROOT & HEALTH CHECK
 // ===============================
 app.get("/", (req, res) => {
-res.send("Kanban API is running successfully on Vercel!");
+  res.send("Kanban API is running successfully on Vercel!");
 });
 
 app.get("/health", (req, res) => {
-res.json({ status: "OK", message: "Server is running" });
+  res.json({ status: "OK", message: "Server is running" });
 });
 
 // ===============================
 // API ROUTES
-// Prefix semua routes dengan /api
 // ===============================
 app.use("/api/projects", projectRoutes);
 app.use("/api/project-members", projectMemberRoutes);
@@ -71,19 +72,19 @@ app.use("/api/cards", cardsRoutes);
 // ERROR HANDLING
 // ===============================
 app.use((err, req, res, next) => {
-console.error("Error:", err);
-res.status(500).json({
-error: "Internal server error",
-message:
-process.env.NODE_ENV === "development"
-? err.message
-: "Something went wrong",
-});
+  console.error("Error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
+  });
 });
 
-// 404 handler (route tidak ditemukan)
+// 404 - Route Not Found
 app.use((req, res) => {
-res.status(404).json({ error: "Route not found" });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // ===============================
@@ -92,7 +93,7 @@ res.status(404).json({ error: "Route not found" });
 export default app;
 
 if (process.env.NODE_ENV !== "production") {
-app.listen(PORT, () => {
-console.log(`Server running at http://localhost:${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
 }
