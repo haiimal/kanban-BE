@@ -1,11 +1,15 @@
 // src/controllers/projectController.js
 import * as projectService from "../services/projectService.js";
 
-// GET all projects
+// GET all projects (user hanya bisa lihat project yang dia ikut)
 export const getAllProjects = async (req, res) => {
   try {
-    const data = await projectService.getAllProjects();
-    res.json({ success: true, message: "Success get all projects", data });
+    if (!req.clerkId) {
+      return res.status(401).json({ success: false, error: "Unauthorized. Please log in first." });
+    }
+
+    const data = await projectService.getAllProjects(req.clerkId);
+    res.json({ success: true, message: "Success get all projects for this user", data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -21,20 +25,20 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// CREATE project
+// CREATE project (tanpa auto board default)
 export const createProject = async (req, res) => {
   const { name, description } = req.body;
-  const clerkId = req.clerkId; // Ambil dari middleware
+  const clerkId = req.clerkId;
 
   try {
     const project = await projectService.createProject(name, description, clerkId);
     res.status(201).json({
       success: true,
-      message: "Project created successfully with default board and admin member",
+      message: "Project created successfully and user set as admin",
       data: project,
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 };
 

@@ -9,7 +9,6 @@ import projectMemberRoutes from "./routes/projectMemberRoutes.js";
 import boardsRoutes from "./routes/boardsRoutes.js";
 import columnsRoutes from "./routes/columnsRoutes.js";
 import cardsRoutes from "./routes/cardsRoutes.js";
-import userRoutes from "./src/routes/userRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -68,7 +67,6 @@ app.use("/api/project-members", projectMemberRoutes);
 app.use("/api/boards", boardsRoutes);
 app.use("/api/columns", columnsRoutes);
 app.use("/api/cards", cardsRoutes);
-app.use("/api/users", userRoutes);
 
 // ===============================
 // ERROR HANDLING

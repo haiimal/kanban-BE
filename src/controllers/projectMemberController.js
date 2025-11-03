@@ -1,11 +1,15 @@
+// src/controllers/projectMemberController.js
 import * as projectMemberService from "../services/projectMemberService.js";
 
-//  Ambil semua member dalam project
+// GET semua member dalam 1 project
 export const getAllMembers = async (req, res) => {
-  console.log("GET /api/project-members/:project_id hit");
   const { project_id } = req.params;
 
   try {
+    if (!req.clerkId) {
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
+    }
+
     const data = await projectMemberService.getAllMembers(project_id);
     res.status(200).json({
       success: true,
@@ -18,30 +22,20 @@ export const getAllMembers = async (req, res) => {
   }
 };
 
-//  Tambah member baru ke project
+// POST - Tambah member baru ke project
 export const addMember = async (req, res) => {
-  console.log("POST /api/project-members hit");
+  const { project_id, clerk_user_id, role } = req.body;
 
   try {
-    const { project_id, clerk_user_id, role } = req.body;
-    const finalClerkId = req.clerkId || clerk_user_id; // ambil dari token Clerk middleware
-
-    if (!finalClerkId) {
-      return res.status(400).json({
-        success: false,
-        error: "Clerk ID tidak ditemukan (dari token atau body).",
-      });
+    if (!req.clerkId) {
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await projectMemberService.addMember(
-      project_id,
-      finalClerkId,
-      role
-    );
+    const data = await projectMemberService.addMember(project_id, clerk_user_id, role, req.clerkId);
 
     res.status(201).json({
       success: true,
-      message: "Berhasil menambahkan member ke project",
+      message: "Berhasil menambahkan member baru ke project",
       data,
     });
   } catch (err) {
@@ -50,13 +44,16 @@ export const addMember = async (req, res) => {
   }
 };
 
-//  Hapus member dari project
+// DELETE - Hapus member dari project
 export const removeMember = async (req, res) => {
-  console.log("DELETE /api/project-members/:id hit");
   const { id } = req.params;
 
   try {
-    await projectMemberService.removeMember(id);
+    if (!req.clerkId) {
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
+    }
+
+    await projectMemberService.removeMember(id, req.clerkId);
     res.status(200).json({
       success: true,
       message: `Member ${id} berhasil dihapus dari project`,

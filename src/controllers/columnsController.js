@@ -1,7 +1,7 @@
 // src/controllers/columnsController.js
 import * as columnsService from "../services/columnsService.js";
 
-// 🔹 GET semua column berdasarkan boards_id
+// GET semua column berdasarkan boards_id
 export const getColumnsByBoard = async (req, res) => {
   const { boards_id } = req.params;
 
@@ -22,7 +22,7 @@ export const getColumnsByBoard = async (req, res) => {
   }
 };
 
-// 🔹 POST tambah column baru
+// POST tambah column baru
 export const createColumn = async (req, res) => {
   const { boards_id, name } = req.body;
 
@@ -47,7 +47,7 @@ export const createColumn = async (req, res) => {
   }
 };
 
-// 🔹 PUT update column
+// PUT update column
 export const updateColumn = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
@@ -69,7 +69,7 @@ export const updateColumn = async (req, res) => {
   }
 };
 
-// 🔹 DELETE column
+// DELETE column
 export const deleteColumn = async (req, res) => {
   const { id } = req.params;
 

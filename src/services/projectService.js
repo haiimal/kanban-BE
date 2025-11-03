@@ -1,15 +1,30 @@
 // src/services/projectService.js
 import supabase from "../config/database.js";
 
-// Ambil semua project
-export const getAllProjects = async () => {
+// Ambil semua project di mana user jadi member / admin
+export const getAllProjects = async (clerkId) => {
   const { data, error } = await supabase
-    .from("project")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .from("project_member")
+    .select(`
+      project (
+        id,
+        name,
+        description,
+        created_at
+      ),
+      role,
+      clerk_user_id
+    `)
+    .eq("clerk_user_id", clerkId)
+    .order("project.created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+
+  // Flatten hasil (karena Supabase nested)
+  return data.map((row) => ({
+    ...row.project,
+    role: row.role,
+  }));
 };
 
 // Ambil project by ID
@@ -29,7 +44,7 @@ export const getProjectById = async (id) => {
   return data;
 };
 
-// Buat project baru + tambah member + board default
+// Buat project baru 
 export const createProject = async (name, description, clerkId) => {
   if (!name) {
     const err = new Error("Nama project wajib diisi");
@@ -53,25 +68,14 @@ export const createProject = async (name, description, clerkId) => {
   if (projectError) throw new Error(projectError.message);
 
   // Tambah admin ke project_member
-  const { error: memberError } = await supabase.from("project_member").insert([
-    {
-      project_id: project.id,
-      clerk_user_id: clerkId,
-      role: "admin",
-      joined_at: new Date().toISOString(),
-    },
-  ]);
-  if (memberError) throw new Error(memberError.message);
+  const { error: memberError } = await supabase.from("project_member").insert([{
+    project_id: project.id,
+    clerk_user_id: clerkId,
+    role: "admin",
+    joined_at: new Date().toISOString(),
+  }]);
 
-  // Buat board default
-  const { error: boardError } = await supabase.from("boards").insert([
-    {
-      project_id: project.id,
-      name: `${name} Board`,
-      created_at: new Date().toISOString(),
-    },
-  ]);
-  if (boardError) throw new Error(boardError.message);
+  if (memberError) throw new Error(memberError.message);
 
   return project;
 };
