@@ -10,11 +10,6 @@
     {
       "src": "/api/(.*)",
       "dest": "src/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "status": 404,
-      "dest": "src/index.js"
     }
   ]
 }
