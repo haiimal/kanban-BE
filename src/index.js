@@ -62,11 +62,11 @@ app.get("/health", (req, res) => {
 // ===============================
 // API ROUTES
 // ===============================
-app.use("/projects", projectRoutes);
-app.use("/project-members", projectMemberRoutes);
-app.use("/boards", boardsRoutes);
-app.use("/columns", columnsRoutes);
-app.use("/cards", cardsRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/project-members", projectMemberRoutes);
+app.use("/api/boards", boardsRoutes);
+app.use("/api/columns", columnsRoutes);
+app.use("/api/cards", cardsRoutes);
 
 // ===============================
 // ERROR HANDLING
