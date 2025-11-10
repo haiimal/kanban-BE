@@ -7,10 +7,10 @@ export const getColumnsByBoard = async (req, res) => {
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await columnsService.getColumnsByBoard(boards_id);
+    const data = await columnsService.getColumnsByBoard(boards_id, req.clerkId);
     res.status(200).json({
       success: true,
       message: `Berhasil mengambil semua columns untuk board ${boards_id}`,
@@ -18,24 +18,20 @@ export const getColumnsByBoard = async (req, res) => {
     });
   } catch (err) {
     console.error("Error getColumnsByBoard:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(403).json({ success: false, error: err.message });
   }
 };
 
-// POST tambah column baru
+// POST tambah column baru (admin only)
 export const createColumn = async (req, res) => {
   const { boards_id, name } = req.body;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
     }
 
-    if (!boards_id || !name) {
-      return res.status(400).json({ error: "boards_id dan name wajib diisi." });
-    }
-
-    const data = await columnsService.createColumn(boards_id, name);
+    const data = await columnsService.createColumn(boards_id, name, req.clerkId);
     res.status(201).json({
       success: true,
       message: "Column berhasil dibuat",
@@ -47,17 +43,17 @@ export const createColumn = async (req, res) => {
   }
 };
 
-// PUT update column
+// PUT update column (admin only)
 export const updateColumn = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await columnsService.updateColumn(id, name);
+    const data = await columnsService.updateColumn(id, name, req.clerkId);
     res.status(200).json({
       success: true,
       message: `Column ${id} berhasil diperbarui`,
@@ -69,22 +65,22 @@ export const updateColumn = async (req, res) => {
   }
 };
 
-// DELETE column
+// DELETE column (admin only)
 export const deleteColumn = async (req, res) => {
   const { id } = req.params;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Please log in first." });
+      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
     }
 
-    await columnsService.deleteColumn(id);
+    await columnsService.deleteColumn(id, req.clerkId);
     res.status(200).json({
       success: true,
       message: `Column ${id} berhasil dihapus`,
     });
   } catch (err) {
     console.error("Error deleteColumn:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
 };

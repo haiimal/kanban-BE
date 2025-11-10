@@ -1,7 +1,7 @@
 // src/services/projectService.js
 import supabase from "../config/database.js";
 
-// Ambil semua project di mana user jadi member / admin
+//  Ambil semua project di mana user jadi member / admin
 export const getAllProjects = async (clerkId) => {
   const { data, error } = await supabase
     .from("project_member")
@@ -20,14 +20,13 @@ export const getAllProjects = async (clerkId) => {
 
   if (error) throw new Error(error.message);
 
-  // Flatten hasil (karena Supabase nested)
   return data.map((row) => ({
     ...row.project,
     role: row.role,
   }));
 };
 
-// Ambil project by ID
+//  Ambil project by ID
 export const getProjectById = async (id) => {
   const { data, error } = await supabase
     .from("project")
@@ -58,7 +57,6 @@ export const createProject = async (name, description, clerkId) => {
     throw err;
   }
 
-  // Insert project
   const { data: project, error: projectError } = await supabase
     .from("project")
     .insert([{ name, description, created_at: new Date().toISOString() }])
@@ -68,20 +66,43 @@ export const createProject = async (name, description, clerkId) => {
   if (projectError) throw new Error(projectError.message);
 
   // Tambah admin ke project_member
-  const { error: memberError } = await supabase.from("project_member").insert([{
-    project_id: project.id,
-    clerk_user_id: clerkId,
-    role: "admin",
-    joined_at: new Date().toISOString(),
-  }]);
+  const { error: memberError } = await supabase.from("project_member").insert([
+    {
+      project_id: project.id,
+      clerk_user_id: clerkId,
+      role: "admin",
+      joined_at: new Date().toISOString(),
+    },
+  ]);
 
   if (memberError) throw new Error(memberError.message);
 
   return project;
 };
 
-// Update project
-export const updateProject = async (id, name, description) => {
+// Update project (hanya admin)
+export const updateProject = async (id, name, description, clerkId) => {
+  // Cek apakah user adalah admin di project ini
+  const { data: member, error: checkError } = await supabase
+    .from("project_member")
+    .select("role")
+    .eq("project_id", id)
+    .eq("clerk_user_id", clerkId)
+    .single();
+
+  if (checkError || !member) {
+    const err = new Error("User tidak terdaftar di project ini");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (member.role !== "admin") {
+    const err = new Error("Hanya admin yang boleh mengubah project ini");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  // Lanjut update
   const { data, error } = await supabase
     .from("project")
     .update({ name, description })
@@ -98,13 +119,36 @@ export const updateProject = async (id, name, description) => {
   return data;
 };
 
-// Hapus project
-export const deleteProject = async (id) => {
+// Hapus project (hanya admin)
+export const deleteProject = async (id, clerkId) => {
+  // Cek apakah user admin
+  const { data: member, error: checkError } = await supabase
+    .from("project_member")
+    .select("role")
+    .eq("project_id", id)
+    .eq("clerk_user_id", clerkId)
+    .single();
+
+  if (checkError || !member) {
+    const err = new Error("User tidak terdaftar di project ini");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (member.role !== "admin") {
+    const err = new Error("Hanya admin yang boleh menghapus project ini");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  // Lanjut hapus project
   const { error } = await supabase.from("project").delete().eq("id", id);
+
   if (error) {
     const err = new Error("Gagal menghapus project");
     err.statusCode = 400;
     throw err;
   }
+
   return true;
 };

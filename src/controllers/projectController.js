@@ -1,7 +1,7 @@
 // src/controllers/projectController.js
 import * as projectService from "../services/projectService.js";
 
-// GET all projects (user hanya bisa lihat project yang dia ikut)
+//  GET all projects (user hanya bisa lihat project yang dia ikut)
 export const getAllProjects = async (req, res) => {
   try {
     if (!req.clerkId) {
@@ -15,7 +15,7 @@ export const getAllProjects = async (req, res) => {
   }
 };
 
-// GET project by ID
+//  GET project by ID
 export const getProjectById = async (req, res) => {
   try {
     const data = await projectService.getProjectById(req.params.id);
@@ -25,7 +25,7 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// CREATE project (tanpa auto board default)
+//  CREATE project
 export const createProject = async (req, res) => {
   const { name, description } = req.body;
   const clerkId = req.clerkId;
@@ -42,26 +42,29 @@ export const createProject = async (req, res) => {
   }
 };
 
-// UPDATE project
+//  UPDATE project (hanya admin)
 export const updateProject = async (req, res) => {
+  const clerkId = req.clerkId;
+  const { id } = req.params;
+  const { name, description } = req.body;
+
   try {
-    const data = await projectService.updateProject(
-      req.params.id,
-      req.body.name,
-      req.body.description
-    );
+    const data = await projectService.updateProject(id, name, description, clerkId);
     res.json({ success: true, message: "Project updated successfully", data });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 };
 
-// DELETE project
+// DELETE project (hanya admin)
 export const deleteProject = async (req, res) => {
+  const clerkId = req.clerkId;
+  const { id } = req.params;
+
   try {
-    await projectService.deleteProject(req.params.id);
+    await projectService.deleteProject(id, clerkId);
     res.json({ success: true, message: "Project deleted successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 };

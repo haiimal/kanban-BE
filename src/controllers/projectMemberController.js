@@ -1,7 +1,7 @@
 // src/controllers/projectMemberController.js
 import * as projectMemberService from "../services/projectMemberService.js";
 
-// GET semua member dalam 1 project
+// GET semua member dalam 1 project (hanya member project yang bisa lihat)
 export const getAllMembers = async (req, res) => {
   const { project_id } = req.params;
 
@@ -10,7 +10,7 @@ export const getAllMembers = async (req, res) => {
       return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await projectMemberService.getAllMembers(project_id);
+    const data = await projectMemberService.getAllMembers(project_id, req.clerkId);
     res.status(200).json({
       success: true,
       message: `Berhasil mengambil semua member untuk project ${project_id}`,
@@ -22,7 +22,7 @@ export const getAllMembers = async (req, res) => {
   }
 };
 
-// POST - Tambah member baru ke project
+// POST - Tambah member baru (hanya admin yang bisa)
 export const addMember = async (req, res) => {
   const { project_id, clerk_user_id, role } = req.body;
 
@@ -44,7 +44,7 @@ export const addMember = async (req, res) => {
   }
 };
 
-// DELETE - Hapus member dari project
+// DELETE - Hapus member dari project (hanya admin project, tidak bisa hapus dirinya sendiri)
 export const removeMember = async (req, res) => {
   const { id } = req.params;
 
