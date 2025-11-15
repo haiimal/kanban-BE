@@ -5,12 +5,9 @@ import {
   addMember,
   removeMember,
 } from "../controllers/projectMemberController.js";
-import { requireAuth } from "@clerk/express";
 
 const router = Router();
 
-// Semua route wajib login
-router.use(requireAuth());
 
 /**
  * GET    /api/project-members/:project_id → Ambil semua member dari project

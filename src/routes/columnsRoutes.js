@@ -6,11 +6,8 @@ import {
   updateColumn,
   deleteColumn,
 } from "../controllers/columnsController.js";
-import { requireAuth } from "@clerk/express";
 
 const router = Router();
-
-router.use(requireAuth());
 
 /**
  * GET    /api/columns/:boards_id → Ambil semua kolom di board

@@ -6,15 +6,11 @@ import {
   updateBoard,
   deleteBoard,
 } from "../controllers/boardsController.js";
-import { requireAuth } from "@clerk/express";
 
 const router = Router();
 
-// Semua route wajib login
-router.use(requireAuth());
-
 /**
- * GET    /api/boards/:project_id → Ambil semua board di project
+ * GET    /api/boards/:project_id → Ambil semua board dari project
  * POST   /api/boards            → Buat board baru (admin only)
  * PUT    /api/boards/:id        → Update nama board (admin only)
  * DELETE /api/boards/:id        → Hapus board (admin only)

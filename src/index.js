@@ -33,14 +33,24 @@ app.use(
 );
 
 // ===============================
-// CLERK AUTHENTICATION
+// CLERK AUTHENTICATION (bisa bypass di Postman)
 // ===============================
 try {
-  app.use(clerkMiddleware());
-  console.log("Clerk middleware aktif");
+  app.use((req, res, next) => {
+    // Kalau tidak ada Authorization header, skip Clerk (buat test manual / Postman)
+    if (!req.headers.authorization) {
+      console.log("Clerk bypass aktif (testing mode tanpa token)");
+      return next();
+    }
+
+    // Kalau ada token → verifikasi pakai Clerk
+    return clerkMiddleware()(req, res, next);
+  });
+  console.log("Clerk middleware aktif (dengan bypass test mode)");
 } catch (err) {
-  console.warn("Clerk middleware gagal di-load (dev mode):", err.message);
+  console.warn("Clerk middleware gagal di-load:", err.message);
 }
+
 
 // ===============================
 // CUSTOM MIDDLEWARE

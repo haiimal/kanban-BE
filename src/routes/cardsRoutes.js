@@ -6,11 +6,8 @@ import {
   updateCard,
   deleteCard,
 } from "../controllers/cardsController.js";
-import { requireAuth } from "@clerk/express";
 
 const router = Router();
-
-router.use(requireAuth());
 
 /**
  * GET    /api/cards/:columns_id → Ambil semua card dalam kolom

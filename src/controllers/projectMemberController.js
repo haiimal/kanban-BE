@@ -1,7 +1,6 @@
 // src/controllers/projectMemberController.js
 import * as projectMemberService from "../services/projectMemberService.js";
 
-// GET semua member dalam 1 project (hanya member project yang bisa lihat)
 export const getAllMembers = async (req, res) => {
   const { project_id } = req.params;
 
@@ -11,18 +10,18 @@ export const getAllMembers = async (req, res) => {
     }
 
     const data = await projectMemberService.getAllMembers(project_id, req.clerkId);
+
     res.status(200).json({
       success: true,
-      message: `Berhasil mengambil semua member untuk project ${project_id}`,
+      message: "Berhasil mengambil semua member",
+      project_id,
       data,
     });
   } catch (err) {
-    console.error("Error getAllMembers:", err.message);
     res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// POST - Tambah member baru (hanya admin yang bisa)
 export const addMember = async (req, res) => {
   const { project_id, clerk_user_id, role } = req.body;
 
@@ -31,7 +30,12 @@ export const addMember = async (req, res) => {
       return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await projectMemberService.addMember(project_id, clerk_user_id, role, req.clerkId);
+    const data = await projectMemberService.addMember(
+      project_id,
+      clerk_user_id,
+      role,
+      req.clerkId
+    );
 
     res.status(201).json({
       success: true,
@@ -39,12 +43,10 @@ export const addMember = async (req, res) => {
       data,
     });
   } catch (err) {
-    console.error("Error addMember:", err.message);
     res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// DELETE - Hapus member dari project (hanya admin project, tidak bisa hapus dirinya sendiri)
 export const removeMember = async (req, res) => {
   const { id } = req.params;
 
@@ -54,12 +56,12 @@ export const removeMember = async (req, res) => {
     }
 
     await projectMemberService.removeMember(id, req.clerkId);
+
     res.status(200).json({
       success: true,
-      message: `Member ${id} berhasil dihapus dari project`,
+      message: `Member dengan ID ${id} berhasil dihapus`,
     });
   } catch (err) {
-    console.error("Error removeMember:", err.message);
     res.status(400).json({ success: false, error: err.message });
   }
 };

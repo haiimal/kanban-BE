@@ -1,30 +1,36 @@
 // src/services/projectService.js
 import supabase from "../config/database.js";
 
+
 //  Ambil semua project di mana user jadi member / admin
 export const getAllProjects = async (clerkId) => {
   const { data, error } = await supabase
     .from("project_member")
     .select(`
-      project (
+      role,
+      clerk_user_id,
+      project:project_id (
         id,
         name,
         description,
         created_at
-      ),
-      role,
-      clerk_user_id
+      )
     `)
     .eq("clerk_user_id", clerkId)
-    .order("project.created_at", { ascending: false });
+    .order("created_at", {
+      referencedTable: "project",
+      ascending: false,
+    });
 
   if (error) throw new Error(error.message);
 
+  // Format output: project + role
   return data.map((row) => ({
     ...row.project,
     role: row.role,
   }));
 };
+
 
 //  Ambil project by ID
 export const getProjectById = async (id) => {

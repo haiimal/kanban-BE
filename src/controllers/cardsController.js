@@ -1,19 +1,21 @@
 // src/controllers/cardsController.js
 import * as cardsService from "../services/cardsService.js";
 
-// GET semua cards dalam column
+// GET semua cards berdasarkan columns_id
 export const getCardsByColumn = async (req, res) => {
   const { columns_id } = req.params;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
     const data = await cardsService.getCardsByColumn(columns_id, req.clerkId);
+
     res.status(200).json({
       success: true,
-      message: `Berhasil mengambil semua cards untuk column ${columns_id}`,
+      message: "Berhasil mengambil semua cards",
+      columns_id,
       data,
     });
   } catch (err) {
@@ -22,16 +24,23 @@ export const getCardsByColumn = async (req, res) => {
   }
 };
 
-// POST buat card baru (admin only)
+// POST - buat card baru (admin only)
 export const createCard = async (req, res) => {
   const { columns_id, title, description, due_date } = req.body;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await cardsService.createCard(columns_id, title, description, due_date, req.clerkId);
+    const data = await cardsService.createCard(
+      columns_id,
+      title,
+      description,
+      due_date,
+      req.clerkId
+    );
+
     res.status(201).json({
       success: true,
       message: "Card berhasil dibuat",
@@ -43,20 +52,25 @@ export const createCard = async (req, res) => {
   }
 };
 
-// PUT update card
+// PUT - update card
 export const updateCard = async (req, res) => {
   const { id } = req.params;
   const { title, description, due_date, columns_id } = req.body;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await cardsService.updateCard(id, { title, description, due_date, columns_id }, req.clerkId);
+    const data = await cardsService.updateCard(
+      id,
+      { title, description, due_date, columns_id },
+      req.clerkId
+    );
+
     res.status(200).json({
       success: true,
-      message: `Card ${id} berhasil diperbarui`,
+      message: "Card berhasil diperbarui",
       data,
     });
   } catch (err) {
@@ -65,19 +79,20 @@ export const updateCard = async (req, res) => {
   }
 };
 
-// DELETE card (admin only)
+// DELETE - hapus card (admin only)
 export const deleteCard = async (req, res) => {
   const { id } = req.params;
 
   try {
     if (!req.clerkId) {
-      return res.status(401).json({ error: "Unauthorized. Harus login dulu." });
+      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
     await cardsService.deleteCard(id, req.clerkId);
+
     res.status(200).json({
       success: true,
-      message: `Card ${id} berhasil dihapus`,
+      message: "Card berhasil dihapus",
     });
   } catch (err) {
     console.error("Error deleteCard:", err.message);

@@ -1,36 +1,37 @@
 // src/services/columnsService.js
 import supabase from "../config/database.js";
 
-// Helper untuk cek role user di project lewat board
+// Helper: ambil role user lewat boards_id → project_id
 const getUserRoleByBoard = async (boards_id, clerkId) => {
   // Ambil project_id dari board
-  const { data: board } = await supabase
+  const { data: board, error: boardErr } = await supabase
     .from("boards")
     .select("project_id")
     .eq("id", boards_id)
     .single();
 
+  if (boardErr) throw new Error(boardErr.message);
   if (!board) throw new Error("Board tidak ditemukan.");
 
-  // Cek apakah user adalah member di project
-  const { data: member } = await supabase
+  // Cek apakah user adalah member project
+  const { data: member, error: memberErr } = await supabase
     .from("project_member")
     .select("role")
     .eq("project_id", board.project_id)
     .eq("clerk_user_id", clerkId)
     .maybeSingle();
 
+  if (memberErr) throw new Error(memberErr.message);
   if (!member) throw new Error("Kamu bukan member dari project ini.");
 
-  return member.role; // 'admin' atau 'member'
+  return member.role; // 'admin' | 'member'
 };
 
-// GET columns (member dan admin boleh)
+// GET columns (member + admin boleh)
 export const getColumnsByBoard = async (boards_id, clerkId) => {
   if (!boards_id) throw new Error("boards_id wajib diisi.");
 
   const role = await getUserRoleByBoard(boards_id, clerkId);
-  if (!role) throw new Error("Akses ditolak.");
 
   const { data, error } = await supabase
     .from("columns")
@@ -64,12 +65,13 @@ export const updateColumn = async (id, name, clerkId) => {
   if (!id || !name) throw new Error("id dan name wajib diisi.");
 
   // Ambil boards_id dari column
-  const { data: column } = await supabase
+  const { data: column, error: colErr } = await supabase
     .from("columns")
     .select("boards_id")
     .eq("id", id)
     .single();
 
+  if (colErr) throw new Error(colErr.message);
   if (!column) throw new Error("Column tidak ditemukan.");
 
   const role = await getUserRoleByBoard(column.boards_id, clerkId);
@@ -91,18 +93,20 @@ export const deleteColumn = async (id, clerkId) => {
   if (!id) throw new Error("id wajib diisi.");
 
   // Ambil boards_id dari column
-  const { data: column } = await supabase
+  const { data: column, error: colErr } = await supabase
     .from("columns")
     .select("boards_id")
     .eq("id", id)
     .single();
 
+  if (colErr) throw new Error(colErr.message);
   if (!column) throw new Error("Column tidak ditemukan.");
 
   const role = await getUserRoleByBoard(column.boards_id, clerkId);
   if (role !== "admin") throw new Error("Hanya admin yang bisa menghapus column.");
 
   const { error } = await supabase.from("columns").delete().eq("id", id);
+
   if (error) throw new Error(error.message);
 
   return true;

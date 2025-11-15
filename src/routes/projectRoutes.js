@@ -7,12 +7,11 @@ import {
   updateProject,
   deleteProject,
 } from "../controllers/projectController.js";
-import { requireAuth } from "@clerk/express"; // Middleware wajib login Clerk
+
 
 const router = Router();
 
-// Semua endpoint wajib login Clerk
-router.use(requireAuth());
+
 
 /**
  * GET    /api/projects         → Lihat semua project milik user login
