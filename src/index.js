@@ -13,54 +13,39 @@ import cardsRoutes from "./routes/cardsRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// ===============================
+// =====================================
 // GLOBAL MIDDLEWARE
-// ===============================
+// =====================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS (Frontend lokal & Vercel)
 app.use(
   cors({
     origin: [
-      "http://localhost:3000", // dev lokal
-      "https://kanban-fe.vercel.app", // domain frontend di Vercel
+      "http://localhost:3000",
+      "https://kanban-fe.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
+    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
     credentials: true,
   })
 );
 
-// ===============================
-// CLERK AUTHENTICATION (bisa bypass di Postman)
-// ===============================
-try {
-  app.use((req, res, next) => {
-    // Kalau tidak ada Authorization header, skip Clerk (buat test manual / Postman)
-    if (!req.headers.authorization) {
-      console.log("Clerk bypass aktif (testing mode tanpa token)");
-      return next();
-    }
+// =====================================
+// CLERK AUTH (token wajib)
+// =====================================
+app.use(clerkMiddleware());
+console.log("Clerk middleware aktif (token required)");
 
-    // Kalau ada token → verifikasi pakai Clerk
-    return clerkMiddleware()(req, res, next);
-  });
-  console.log("Clerk middleware aktif (dengan bypass test mode)");
-} catch (err) {
-  console.warn("Clerk middleware gagal di-load:", err.message);
-}
-
-
-// ===============================
+// =====================================
 // CUSTOM MIDDLEWARE
-// ===============================
-app.use(clerkIdInjectorWithLogging); // inject Clerk ID dari token
-app.use(performanceLogger); // log durasi request
+// =====================================
+app.use(clerkIdInjectorWithLogging);
+app.use(performanceLogger);
 
-// ===============================
-// ROOT & HEALTH CHECK
-// ===============================
+// =====================================
+// ROUTES
+// =====================================
 app.get("/", (req, res) => {
   res.send("Kanban API is running successfully on Vercel!");
 });
@@ -69,18 +54,15 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", message: "Server is running" });
 });
 
-// ===============================
-// API ROUTES
-// ===============================
 app.use("/api/projects", projectRoutes);
 app.use("/api/project-members", projectMemberRoutes);
 app.use("/api/boards", boardsRoutes);
 app.use("/api/columns", columnsRoutes);
 app.use("/api/cards", cardsRoutes);
 
-// ===============================
-// ERROR HANDLING
-// ===============================
+// =====================================
+// ERROR HANDLER
+// =====================================
 app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({
@@ -92,14 +74,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 - Route Not Found
+// =====================================
+// 404
+// =====================================
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ===============================
-// SERVER START
-// ===============================
+// =====================================
+// START SERVER
+// =====================================
 export default app;
 
 if (process.env.NODE_ENV !== "production") {
