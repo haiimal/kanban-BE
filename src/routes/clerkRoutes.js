@@ -1,10 +1,9 @@
 // src/routes/clerkRoutes.js
-import { Router } from "express";
-import { listClerkUsers } from "../controllers/clerkController.js";
+import express from "express";
+import { fetchClerkUsers } from "../controllers/clerkController.js";
 
-const router = Router();
+const router = express.Router();
 
-// GET semua user Clerk
-router.get("/", listClerkUsers);
+router.get("/", fetchClerkUsers);
 
 export default router;

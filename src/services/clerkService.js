@@ -1,22 +1,15 @@
 // src/services/clerkService.js
-import { Clerk } from "@clerk/backend";
-
-const clerkClient = Clerk({
-  secretKey: process.env.CLERK_SECRET_KEY,
-});
+import axios from "axios";
 
 export const getAllClerkUsers = async () => {
-  const users = await clerkClient.users.getUserList({
-    limit: 100,          // ambil max 100 user
-    orderBy: "-created_at",
-  });
+  const options = {
+    method: "GET",
+    url: "https://api.clerk.com/v1/users",
+    headers: {
+      Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+    },
+  };
 
-  return users.data.map((u) => ({
-    id: u.id,
-    email: u.emailAddresses?.[0]?.emailAddress || null,
-    username: u.username,
-    first_name: u.firstName,
-    last_name: u.lastName,
-    created_at: u.createdAt,
-  }));
+  const { data } = await axios.request(options);
+  return data;
 };

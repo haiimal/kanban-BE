@@ -55,12 +55,12 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", message: "Server is running" });
 });
 
+app.use("/api/clerk-users", clerkRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/project-members", projectMemberRoutes);
 app.use("/api/boards", boardsRoutes);
 app.use("/api/columns", columnsRoutes);
 app.use("/api/cards", cardsRoutes);
-app.use("/api/clerk-users", clerkRoutes);
 
 // =====================================
 // ERROR HANDLER
