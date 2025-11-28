@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
 import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
+import clerkRoutes from "./routes/clerkRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import projectMemberRoutes from "./routes/projectMemberRoutes.js";
 import boardsRoutes from "./routes/boardsRoutes.js";
@@ -59,6 +60,7 @@ app.use("/api/project-members", projectMemberRoutes);
 app.use("/api/boards", boardsRoutes);
 app.use("/api/columns", columnsRoutes);
 app.use("/api/cards", cardsRoutes);
+app.use("/api/clerk-users", clerkRoutes);
 
 // =====================================
 // ERROR HANDLER
