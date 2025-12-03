@@ -44,7 +44,7 @@ export const addMember = async (project_id, clerk_user_id, role, requesterId) =>
   if (adminCheck.role !== "admin") throw new Error("Hanya admin yang bisa menambah member");
 
   // validasi role
-  const validRoles = ["admin", "member"];
+  const validRoles = ["Admin", "Member"];
   if (!validRoles.includes(role)) throw new Error("Role tidak valid");
 
   // cek user sudah ada
