@@ -22,16 +22,25 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "*",
-    //[
-    //   "http://localhost:3000",
-    //   "https://kanban-fe.vercel.app",
-    // ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
+    origin: (origin, callback) => {
+      // allow request dari mana saja (browser & non-browser)
+      if (!origin) return callback(null, true);
+
+      // echo balik origin request (WAJIB kalau credentials true)
+      return callback(null, origin);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "ngrok-skip-browser-warning",
+    ],
   })
 );
+
+// penting untuk preflight
+app.options("*", cors());
 
 // =====================================
 // CLERK AUTH (token wajib)
