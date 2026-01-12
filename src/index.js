@@ -22,10 +22,11 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://kanban-fe.vercel.app",
-    ],
+    origin: "*",
+    //[
+    //   "http://localhost:3000",
+    //   "https://kanban-fe.vercel.app",
+    // ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
     credentials: true,
