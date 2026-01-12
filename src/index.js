@@ -23,17 +23,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server, Postman, curl
       if (!origin) return callback(null, true);
-
-      // reflect origin (WAJIB kalau credentials: true)
       callback(null, origin);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clerk-user-id",
+    ],
   })
 );
+
 
 
 
