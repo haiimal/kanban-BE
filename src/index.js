@@ -39,8 +39,6 @@ app.use(
   })
 );
 
-// penting untuk preflight
-app.options("*", cors());
 
 // =====================================
 // CLERK AUTH (token wajib)
