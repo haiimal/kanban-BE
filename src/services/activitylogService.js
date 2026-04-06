@@ -2,7 +2,6 @@ import supabase from "../config/database.js";
 
 // Ambil log per card
 export const getLogsByCard = async (card_id, clerkId) => {
-  // Cek apakah user adalah member project
   const { data: card } = await supabase.from("cards").select("columns_id").eq("id", card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
 
@@ -38,12 +37,18 @@ export const getLogsByProject = async (project_id, clerkId) => {
   if (!member) throw new Error("Kamu bukan anggota project ini.");
 
   const { data: boards } = await supabase.from("boards").select("id").eq("project_id", project_id);
+  if (!boards || boards.length === 0) return [];
+
   const boardIds = boards.map(b => b.id);
 
   const { data: columns } = await supabase.from("columns").select("id").in("boards_id", boardIds);
+  if (!columns || columns.length === 0) return [];
+
   const columnIds = columns.map(c => c.id);
 
   const { data: cards } = await supabase.from("cards").select("id").in("columns_id", columnIds);
+  if (!cards || cards.length === 0) return [];
+
   const cardIds = cards.map(c => c.id);
 
   const { data, error } = await supabase
