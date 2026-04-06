@@ -5,9 +5,7 @@ export const getAllMembers = async (req, res) => {
   const { project_id } = req.params;
 
   try {
-    if (!req.clerkId) {
-      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
-    }
+    if (!req.clerkId) return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
 
     const data = await projectMemberService.getAllMembers(project_id, req.clerkId);
 
@@ -26,16 +24,9 @@ export const addMember = async (req, res) => {
   const { project_id, clerk_user_id, role } = req.body;
 
   try {
-    if (!req.clerkId) {
-      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
-    }
+    if (!req.clerkId) return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
 
-    const data = await projectMemberService.addMember(
-      project_id,
-      clerk_user_id,
-      role,
-      req.clerkId
-    );
+    const data = await projectMemberService.addMember(project_id, clerk_user_id, role, req.clerkId);
 
     res.status(201).json({
       success: true,
@@ -51,9 +42,7 @@ export const removeMember = async (req, res) => {
   const { id } = req.params;
 
   try {
-    if (!req.clerkId) {
-      return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
-    }
+    if (!req.clerkId) return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
 
     await projectMemberService.removeMember(id, req.clerkId);
 

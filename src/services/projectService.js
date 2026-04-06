@@ -1,8 +1,7 @@
 // src/services/projectService.js
 import supabase from "../config/database.js";
 
-
-//  Ambil semua project di mana user jadi member / admin
+// Ambil semua project di mana user jadi member
 export const getAllProjects = async (clerkId) => {
   const { data, error } = await supabase
     .from("project_member")
@@ -24,15 +23,13 @@ export const getAllProjects = async (clerkId) => {
 
   if (error) throw new Error(error.message);
 
-  // Format output: project + role
   return data.map((row) => ({
     ...row.project,
     role: row.role,
   }));
 };
 
-
-//  Ambil project by ID
+// Ambil project by ID
 export const getProjectById = async (id) => {
   const { data, error } = await supabase
     .from("project")
@@ -49,46 +46,54 @@ export const getProjectById = async (id) => {
   return data;
 };
 
-// Buat project baru 
+// Buat project baru → PM otomatis + default board & columns
 export const createProject = async (name, description, clerkId) => {
-  if (!name) {
-    const err = new Error("Nama project wajib diisi");
-    err.statusCode = 400;
-    throw err;
-  }
+  if (!name) throw new Error("Nama project wajib diisi");
+  if (!clerkId) throw new Error("User belum terautentikasi");
 
-  if (!clerkId) {
-    const err = new Error("User belum terautentikasi dengan Clerk");
-    err.statusCode = 401;
-    throw err;
-  }
-
+  // Buat project
   const { data: project, error: projectError } = await supabase
     .from("project")
     .insert([{ name, description, created_at: new Date().toISOString() }])
     .select()
     .single();
-
   if (projectError) throw new Error(projectError.message);
 
-  // Tambah admin ke project_member
+  // Tambah PM ke project_member
   const { error: memberError } = await supabase.from("project_member").insert([
     {
       project_id: project.id,
       clerk_user_id: clerkId,
-      role: "admin",
+      role: "PM",
       joined_at: new Date().toISOString(),
     },
   ]);
-
   if (memberError) throw new Error(memberError.message);
+
+  //  Buat default board
+  const { data: board, error: boardError } = await supabase
+    .from("boards")
+    .insert([{ project_id: project.id, name: "Main Board", created_at: new Date().toISOString() }])
+    .select()
+    .single();
+  if (boardError) throw new Error(boardError.message);
+
+  //  Buat default columns: To Do, In Progress, Done
+  const defaultColumns = ["To Do", "In Progress", "Done"];
+  const { error: columnsError } = await supabase.from("columns").insert(
+    defaultColumns.map((name) => ({
+      boards_id: board.id,
+      name,
+      created_at: new Date().toISOString(),
+    }))
+  );
+  if (columnsError) throw new Error(columnsError.message);
 
   return project;
 };
 
-// Update project (hanya admin)
+// Update project → hanya PM
 export const updateProject = async (id, name, description, clerkId) => {
-  // Cek apakah user adalah admin di project ini
   const { data: member, error: checkError } = await supabase
     .from("project_member")
     .select("role")
@@ -96,38 +101,22 @@ export const updateProject = async (id, name, description, clerkId) => {
     .eq("clerk_user_id", clerkId)
     .single();
 
-  if (checkError || !member) {
-    const err = new Error("User tidak terdaftar di project ini");
-    err.statusCode = 403;
-    throw err;
-  }
+  if (checkError || !member) throw new Error("User tidak terdaftar di project ini");
+  if (member.role !== "PM") throw new Error("Hanya PM yang boleh mengubah project ini");
 
-  if (member.role !== "admin") {
-    const err = new Error("Hanya admin yang boleh mengubah project ini");
-    err.statusCode = 403;
-    throw err;
-  }
-
-  // Lanjut update
   const { data, error } = await supabase
     .from("project")
     .update({ name, description })
     .eq("id", id)
     .select()
     .single();
-
-  if (error) {
-    const err = new Error("Gagal mengupdate project");
-    err.statusCode = 400;
-    throw err;
-  }
+  if (error) throw new Error("Gagal mengupdate project");
 
   return data;
 };
 
-// Hapus project (hanya admin)
+// Hapus project → hanya PM
 export const deleteProject = async (id, clerkId) => {
-  // Cek apakah user admin
   const { data: member, error: checkError } = await supabase
     .from("project_member")
     .select("role")
@@ -135,26 +124,11 @@ export const deleteProject = async (id, clerkId) => {
     .eq("clerk_user_id", clerkId)
     .single();
 
-  if (checkError || !member) {
-    const err = new Error("User tidak terdaftar di project ini");
-    err.statusCode = 403;
-    throw err;
-  }
+  if (checkError || !member) throw new Error("User tidak terdaftar di project ini");
+  if (member.role !== "PM") throw new Error("Hanya PM yang boleh menghapus project ini");
 
-  if (member.role !== "admin") {
-    const err = new Error("Hanya admin yang boleh menghapus project ini");
-    err.statusCode = 403;
-    throw err;
-  }
-
-  // Lanjut hapus project
   const { error } = await supabase.from("project").delete().eq("id", id);
-
-  if (error) {
-    const err = new Error("Gagal menghapus project");
-    err.statusCode = 400;
-    throw err;
-  }
+  if (error) throw new Error("Gagal menghapus project");
 
   return true;
 };

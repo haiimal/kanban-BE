@@ -1,6 +1,9 @@
 // src/services/projectMemberService.js
 import supabase from "../config/database.js";
 
+// =============================
+//  GET ALL MEMBERS
+// =============================
 export const getAllMembers = async (project_id, requesterId) => {
   if (!project_id) throw new Error("project_id wajib diisi");
 
@@ -26,25 +29,28 @@ export const getAllMembers = async (project_id, requesterId) => {
   return data;
 };
 
+// =============================
+//  ADD MEMBER (PM ONLY)
+// =============================
 export const addMember = async (project_id, clerk_user_id, role, requesterId) => {
   if (!project_id || !clerk_user_id || !role) {
     throw new Error("project_id, clerk_user_id, dan role wajib diisi");
   }
 
-  // cek requester admin
-  const { data: adminCheck, error: adminErr } = await supabase
+  // cek requester adalah PM
+  const { data: pmCheck, error: pmErr } = await supabase
     .from("project_member")
     .select("role")
     .eq("project_id", project_id)
     .eq("clerk_user_id", requesterId)
     .single();
 
-  if (adminErr) throw new Error(adminErr.message);
-  if (!adminCheck) throw new Error("Kamu bukan member project ini");
-  if (adminCheck.role !== "admin") throw new Error("Hanya admin yang bisa menambah member");
+  if (pmErr) throw new Error(pmErr.message);
+  if (!pmCheck) throw new Error("Kamu bukan member project ini");
+  if (pmCheck.role !== "PM") throw new Error("Hanya PM yang bisa menambah member");
 
-  // validasi role
-  const validRoles = ["Admin", "Member"];
+  // validasi role software house
+  const validRoles = ["PM", "DEVELOPER", "QA", "UIUX", "DEVOPS"];
   if (!validRoles.includes(role)) throw new Error("Role tidak valid");
 
   // cek user sudah ada
@@ -76,6 +82,9 @@ export const addMember = async (project_id, clerk_user_id, role, requesterId) =>
   return data;
 };
 
+// =============================
+//  REMOVE MEMBER (PM ONLY)
+// =============================
 export const removeMember = async (id, requesterId) => {
   if (!id) throw new Error("ID member wajib diisi");
 
@@ -89,21 +98,19 @@ export const removeMember = async (id, requesterId) => {
   if (memberErr) throw new Error(memberErr.message);
   if (!member) throw new Error("Member tidak ditemukan");
 
-  // cek requester admin
-  const { data: adminCheck } = await supabase
+  // cek requester PM
+  const { data: pmCheck } = await supabase
     .from("project_member")
     .select("role")
     .eq("project_id", member.project_id)
     .eq("clerk_user_id", requesterId)
     .single();
 
-  if (!adminCheck || adminCheck.role !== "admin") {
-    throw new Error("Hanya admin yang bisa menghapus member");
-  }
+  if (!pmCheck || pmCheck.role !== "PM") throw new Error("Hanya PM yang bisa menghapus member");
 
-  // admin tidak boleh hapus diri sendiri
+  // PM tidak boleh hapus diri sendiri
   if (member.clerk_user_id === requesterId) {
-    throw new Error("Admin tidak boleh menghapus dirinya sendiri");
+    throw new Error("PM tidak boleh menghapus dirinya sendiri");
   }
 
   // hapus

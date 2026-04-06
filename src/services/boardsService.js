@@ -14,7 +14,7 @@ const isProjectMember = async (project_id, clerkId) => {
   return data; // bisa null
 };
 
-// GET - semua board di project
+// GET - semua board di project (semua member bisa lihat)
 export const getBoardsByProject = async (project_id, clerkId) => {
   if (!project_id) throw new Error("project_id wajib diisi");
 
@@ -31,13 +31,13 @@ export const getBoardsByProject = async (project_id, clerkId) => {
   return data;
 };
 
-// POST - buat board baru
+// POST - buat board baru (PM only)
 export const createBoard = async (project_id, name, clerkId) => {
   if (!project_id || !name) throw new Error("project_id dan name wajib diisi");
 
   const member = await isProjectMember(project_id, clerkId);
   if (!member) throw new Error("Kamu bukan member project ini");
-  if (member.role !== "admin") throw new Error("Hanya admin yang bisa membuat board");
+  if (member.role !== "PM") throw new Error("Hanya PM yang bisa membuat board");
 
   const { data, error } = await supabase
     .from("boards")
@@ -49,23 +49,21 @@ export const createBoard = async (project_id, name, clerkId) => {
   return data;
 };
 
-// PUT - update board
+// PUT - update board (PM only)
 export const updateBoard = async (id, name, clerkId) => {
   if (!id || !name) throw new Error("id dan name wajib diisi");
 
-  // ambil project id board
   const { data: board, error: boardErr } = await supabase
     .from("boards")
     .select("project_id")
     .eq("id", id)
     .single();
 
-  if (boardErr) throw new Error(boardErr.message);
-  if (!board) throw new Error("Board tidak ditemukan");
+  if (boardErr || !board) throw new Error("Board tidak ditemukan");
 
   const member = await isProjectMember(board.project_id, clerkId);
   if (!member) throw new Error("Kamu bukan member project ini");
-  if (member.role !== "admin") throw new Error("Hanya admin yang bisa mengedit board");
+  if (member.role !== "PM") throw new Error("Hanya PM yang bisa mengedit board");
 
   const { data, error } = await supabase
     .from("boards")
@@ -78,29 +76,23 @@ export const updateBoard = async (id, name, clerkId) => {
   return data;
 };
 
-// DELETE - hapus board
+// DELETE - hapus board (PM only)
 export const deleteBoard = async (id, clerkId) => {
   if (!id) throw new Error("id wajib diisi");
 
-  // ambil project_id board
   const { data: board, error: boardErr } = await supabase
     .from("boards")
     .select("project_id")
     .eq("id", id)
     .single();
 
-  if (boardErr) throw new Error(boardErr.message);
-  if (!board) throw new Error("Board tidak ditemukan");
+  if (boardErr || !board) throw new Error("Board tidak ditemukan");
 
   const member = await isProjectMember(board.project_id, clerkId);
   if (!member) throw new Error("Kamu bukan member project ini");
-  if (member.role !== "admin") throw new Error("Hanya admin yang bisa menghapus board");
+  if (member.role !== "PM") throw new Error("Hanya PM yang bisa menghapus board");
 
-  const { error } = await supabase
-    .from("boards")
-    .delete()
-    .eq("id", id);
-
+  const { error } = await supabase.from("boards").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
   return true;

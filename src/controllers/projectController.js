@@ -1,12 +1,9 @@
 // src/controllers/projectController.js
 import * as projectService from "../services/projectService.js";
 
-//  GET all projects (user hanya bisa lihat project yang dia ikut)
 export const getAllProjects = async (req, res) => {
   try {
-    if (!req.clerkId) {
-      return res.status(401).json({ success: false, error: "Unauthorized. Please log in first." });
-    }
+    if (!req.clerkId) return res.status(401).json({ success: false, error: "Unauthorized. Please log in first." });
 
     const data = await projectService.getAllProjects(req.clerkId);
     res.json({ success: true, message: "Success get all projects for this user", data });
@@ -15,7 +12,6 @@ export const getAllProjects = async (req, res) => {
   }
 };
 
-//  GET project by ID
 export const getProjectById = async (req, res) => {
   try {
     const data = await projectService.getProjectById(req.params.id);
@@ -25,7 +21,6 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-//  CREATE project
 export const createProject = async (req, res) => {
   const { name, description } = req.body;
   const clerkId = req.clerkId;
@@ -34,7 +29,7 @@ export const createProject = async (req, res) => {
     const project = await projectService.createProject(name, description, clerkId);
     res.status(201).json({
       success: true,
-      message: "Project created successfully and user set as admin",
+      message: "Project created successfully and user set as PM",
       data: project,
     });
   } catch (err) {
@@ -42,7 +37,6 @@ export const createProject = async (req, res) => {
   }
 };
 
-//  UPDATE project (hanya admin)
 export const updateProject = async (req, res) => {
   const clerkId = req.clerkId;
   const { id } = req.params;
@@ -56,7 +50,6 @@ export const updateProject = async (req, res) => {
   }
 };
 
-// DELETE project (hanya admin)
 export const deleteProject = async (req, res) => {
   const clerkId = req.clerkId;
   const { id } = req.params;

@@ -16,9 +16,9 @@ const router = Router();
 /**
  * GET    /api/projects         → Lihat semua project milik user login
  * GET    /api/projects/:id     → Lihat detail project tertentu
- * POST   /api/projects         → Tambah project baru (otomatis jadi admin)
- * PUT    /api/projects/:id     → Update project (admin only)
- * DELETE /api/projects/:id     → Hapus project (admin only)
+ * POST   /api/projects         → Tambah project baru (otomatis jadi PM)
+ * PUT    /api/projects/:id     → Update project (PM only)
+ * DELETE /api/projects/:id     → Hapus project (PM only)
  */
 router.get("/", getAllProjects);
 router.get("/:id", getProjectById);
