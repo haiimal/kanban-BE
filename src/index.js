@@ -2,8 +2,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-// import { clerkMiddleware } from "@clerk/express";
-// import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
+import { clerkMiddleware } from "@clerk/express";
+import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
 import clerkRoutes from "./routes/clerkRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import projectMemberRoutes from "./routes/projectMemberRoutes.js";
@@ -43,20 +43,20 @@ app.use(
 // =====================================
 // CLERK AUTH (token wajib)
 // =====================================
-// app.use(clerkMiddleware());
+app.use(clerkMiddleware());
 // console.log("Clerk middleware aktif (token required)");
 
 // =====================================
 // CUSTOM MIDDLEWARE
 // =====================================
-// app.use(clerkIdInjectorWithLogging);
-// app.use(performanceLogger);
+app.use(clerkIdInjectorWithLogging);
+app.use(performanceLogger);
 
 
-app.use((req, res, next) => {
-  req.clerkId = "user_test_123";
-  next();
-});
+// app.use((req, res, next) => {
+//   req.clerkId = "user_test_123";
+//   next();
+// });
 
 // =====================================
 // ROUTES
