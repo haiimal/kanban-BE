@@ -284,18 +284,27 @@ export const getProjectProgress = async (project_id, clerkId) => {
 
   const boardIds = boards.map(b => b.id);
 
+  // Ambil columns beserta namanya
   const { data: columns } = await supabase.from("columns").select("id, name").in("boards_id", boardIds);
   if (!columns || columns.length === 0) return { percentage: 0, total: 0, done: 0, in_progress: 0, todo: 0 };
 
   const columnIds = columns.map(c => c.id);
 
-  const { data: cards } = await supabase.from("cards").select("progress, columns_id").in("columns_id", columnIds);
+  // Ambil cards beserta columns_id-nya
+  const { data: cards } = await supabase.from("cards").select("id, columns_id").in("columns_id", columnIds);
   if (!cards || cards.length === 0) return { percentage: 0, total: 0, done: 0, in_progress: 0, todo: 0 };
 
+  // Buat map: columns_id → nama kolom
+  const columnNameMap = {};
+  columns.forEach(c => {
+    columnNameMap[c.id] = c.name.toLowerCase().trim();
+  });
+
   const total = cards.length;
-  const done = cards.filter(c => c.progress === 100).length;
-  const in_progress = cards.filter(c => c.progress > 0 && c.progress < 100).length;
-  const todo = cards.filter(c => c.progress === 0).length;
+
+  const done = cards.filter(c => columnNameMap[c.columns_id] === "done").length;
+  const in_progress = cards.filter(c => columnNameMap[c.columns_id] === "in progress").length;
+  const todo = cards.filter(c => columnNameMap[c.columns_id] === "to do").length;
   const percentage = Math.round((done / total) * 100);
 
   return { percentage, total, done, in_progress, todo };
