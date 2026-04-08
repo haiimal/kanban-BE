@@ -4,8 +4,14 @@ import supabase from "../config/database.js";
 // =============================
 //  HELPER: ACTIVITY LOG
 // =============================
-const createActivityLog = async ({ card_id, clerk_user_id, action, description }) => {
-  await supabase.from("activity_logs").insert([{ card_id, clerk_user_id, action, description }]);
+const createActivityLog = async ({ card_id = null, project_id = null, clerk_user_id, action, description }) => {
+  await supabase.from("activity_logs").insert([{ 
+    card_id, 
+    project_id,
+    clerk_user_id, 
+    action, 
+    description 
+  }]);
 };
 
 // =============================
@@ -272,40 +278,41 @@ export const getCardMembers = async (card_id, clerkId) => {
 // =============================
 export const getProjectProgress = async (project_id, clerkId) => {
   const { data: member } = await supabase
-    .from("project_member")
-    .select("role")
+    .from("project_member").select("role")
     .eq("project_id", project_id)
     .eq("clerk_user_id", clerkId)
     .maybeSingle();
   if (!member) throw new Error("Kamu bukan anggota project ini.");
 
   const { data: boards } = await supabase.from("boards").select("id").eq("project_id", project_id);
-  if (!boards || boards.length === 0) return { percentage: 0, total: 0, done: 0, in_progress: 0, todo: 0 };
+  if (!boards || boards.length === 0) return { percentage: 0, total: 0, done: 0, breakdown: [] };
 
   const boardIds = boards.map(b => b.id);
 
-  // Ambil columns beserta namanya
-  const { data: columns } = await supabase.from("columns").select("id, name").in("boards_id", boardIds);
-  if (!columns || columns.length === 0) return { percentage: 0, total: 0, done: 0, in_progress: 0, todo: 0 };
+  const { data: columns } = await supabase.from("columns").select("id, name, type").in("boards_id", boardIds);
+  if (!columns || columns.length === 0) return { percentage: 0, total: 0, done: 0, breakdown: [] };
 
   const columnIds = columns.map(c => c.id);
 
-  // Ambil cards beserta columns_id-nya
   const { data: cards } = await supabase.from("cards").select("id, columns_id").in("columns_id", columnIds);
-  if (!cards || cards.length === 0) return { percentage: 0, total: 0, done: 0, in_progress: 0, todo: 0 };
-
-  // Buat map: columns_id → nama kolom
-  const columnNameMap = {};
-  columns.forEach(c => {
-    columnNameMap[c.id] = c.name.toLowerCase().trim();
-  });
+  if (!cards || cards.length === 0) return { percentage: 0, total: 0, done: 0, breakdown: [] };
 
   const total = cards.length;
 
-  const done = cards.filter(c => columnNameMap[c.columns_id] === "done").length;
-  const in_progress = cards.filter(c => columnNameMap[c.columns_id] === "in progress").length;
-  const todo = cards.filter(c => columnNameMap[c.columns_id] === "to do").length;
+  // Hitung jumlah card per kolom secara dinamis
+  const breakdown = columns.map(col => ({
+    column_id: col.id,
+    column_name: col.name,
+    type: col.type || "other",
+    count: cards.filter(c => c.columns_id === col.id).length,
+  }));
+
+  // Done tetap berdasarkan type === "done"
+  const done = breakdown
+    .filter(col => col.type === "done")
+    .reduce((sum, col) => sum + col.count, 0);
+
   const percentage = Math.round((done / total) * 100);
 
-  return { percentage, total, done, in_progress, todo };
+  return { percentage, total, done, breakdown };
 };

@@ -29,8 +29,7 @@ export const getLogsByCard = async (card_id, clerkId) => {
 // Ambil semua log per project
 export const getLogsByProject = async (project_id, clerkId) => {
   const { data: member } = await supabase
-    .from("project_member")
-    .select("role")
+    .from("project_member").select("role")
     .eq("project_id", project_id)
     .eq("clerk_user_id", clerkId)
     .maybeSingle();
@@ -42,20 +41,26 @@ export const getLogsByProject = async (project_id, clerkId) => {
   const boardIds = boards.map(b => b.id);
 
   const { data: columns } = await supabase.from("columns").select("id").in("boards_id", boardIds);
-  if (!columns || columns.length === 0) return [];
+  const columnIds = columns && columns.length > 0 ? columns.map(c => c.id) : [];
 
-  const columnIds = columns.map(c => c.id);
+  const { data: cards } = columnIds.length > 0
+    ? await supabase.from("cards").select("id").in("columns_id", columnIds)
+    : { data: [] };
+  const cardIds = cards && cards.length > 0 ? cards.map(c => c.id) : [];
 
-  const { data: cards } = await supabase.from("cards").select("id").in("columns_id", columnIds);
-  if (!cards || cards.length === 0) return [];
-
-  const cardIds = cards.map(c => c.id);
-
-  const { data, error } = await supabase
+  // Ambil log dari card_id DAN project_id sekaligus
+  let query = supabase
     .from("activity_logs")
     .select("*")
-    .in("card_id", cardIds)
     .order("created_at", { ascending: false });
+
+  if (cardIds.length > 0) {
+    query = query.or(`card_id.in.(${cardIds.join(",")}),project_id.eq.${project_id}`);
+  } else {
+    query = query.eq("project_id", project_id);
+  }
+
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
   return data;
