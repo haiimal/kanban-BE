@@ -24,16 +24,16 @@ export const getColumnsByBoard = async (req, res) => {
   }
 };
 
-// POST - tambah column (admin only)
+// POST - tambah column (PM only)
 export const createColumn = async (req, res) => {
-  const { boards_id, name } = req.body;
+  const { boards_id, name, type } = req.body; // ← tambah type
 
   try {
     if (!req.clerkId) {
       return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await columnsService.createColumn(boards_id, name, req.clerkId);
+    const data = await columnsService.createColumn(boards_id, name, type, req.clerkId); // ← passing type
 
     res.status(201).json({
       success: true,
@@ -46,17 +46,17 @@ export const createColumn = async (req, res) => {
   }
 };
 
-// PUT - update column
+// PUT - update column (PM only)
 export const updateColumn = async (req, res) => {
   const { id } = req.params;
-  const { name } = req.body;
+  const { name, type } = req.body; // ← tambah type
 
   try {
     if (!req.clerkId) {
       return res.status(401).json({ success: false, error: "Unauthorized. Harus login dulu." });
     }
 
-    const data = await columnsService.updateColumn(id, name, req.clerkId);
+    const data = await columnsService.updateColumn(id, name, type, req.clerkId); // ← passing type
 
     res.status(200).json({
       success: true,
@@ -69,7 +69,7 @@ export const updateColumn = async (req, res) => {
   }
 };
 
-// DELETE column
+// DELETE column (PM only)
 export const deleteColumn = async (req, res) => {
   const { id } = req.params;
 

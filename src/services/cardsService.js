@@ -78,12 +78,22 @@ export const updateCard = async (id, fields, clerkId) => {
     if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
   }
 
+  // Ambil nama kolom asal dan tujuan kalau card digeser
+  let fromColumnName = null;
+  let toColumnName = null;
+  if (fields.columns_id !== undefined) {
+    const { data: fromCol } = await supabase.from("columns").select("name").eq("id", card.columns_id).single();
+    const { data: toCol } = await supabase.from("columns").select("name").eq("id", fields.columns_id).single();
+    fromColumnName = fromCol?.name || "kolom lama";
+    toColumnName = toCol?.name || "kolom baru";
+  }
+
   const { data, error } = await supabase.from("cards").update(fields).eq("id", id).select().single();
   if (error) throw new Error(error.message);
 
   // Description activity log sesuai field yang diupdate
   let desc = `Mengupdate task "${card.title}"`;
-  if (fields.columns_id !== undefined) desc = `Memindahkan task "${card.title}" ke kolom lain`;
+  if (fields.columns_id !== undefined) desc = `Memindahkan task "${card.title}" dari ${fromColumnName} ke ${toColumnName}`;
   if (fields.progress === 100) desc = `Menyelesaikan task "${card.title}"`;
   if (fields.progress !== undefined && fields.progress > 0 && fields.progress < 100) desc = `Mengupdate progress "${card.title}" ke ${fields.progress}%`;
   if (fields.progress === 0) desc = `Mereset progress "${card.title}" ke 0%`;
