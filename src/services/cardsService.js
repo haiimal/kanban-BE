@@ -83,9 +83,14 @@ export const updateCard = async (id, fields, clerkId) => {
   let toColumnName = null;
   if (fields.columns_id !== undefined) {
     const { data: fromCol } = await supabase.from("columns").select("name").eq("id", card.columns_id).single();
-    const { data: toCol } = await supabase.from("columns").select("name").eq("id", fields.columns_id).single();
+    const { data: toCol } = await supabase.from("columns").select("name, type").eq("id", fields.columns_id).single();
     fromColumnName = fromCol?.name || "kolom lama";
     toColumnName = toCol?.name || "kolom baru";
+
+    // Auto-sync progress berdasarkan type kolom tujuan
+    if (toCol?.type === "done") fields.progress = 100;
+    else if (toCol?.type === "in_progress" && fields.progress === undefined) fields.progress = 50;
+    else if (toCol?.type === "todo") fields.progress = 0;
   }
 
   const { data, error } = await supabase.from("cards").update(fields).eq("id", id).select().single();
@@ -94,9 +99,9 @@ export const updateCard = async (id, fields, clerkId) => {
   // Description activity log sesuai field yang diupdate
   let desc = `Mengupdate task "${card.title}"`;
   if (fields.columns_id !== undefined) desc = `Memindahkan task "${card.title}" dari ${fromColumnName} ke ${toColumnName}`;
-  if (fields.progress === 100) desc = `Menyelesaikan task "${card.title}"`;
-  if (fields.progress !== undefined && fields.progress > 0 && fields.progress < 100) desc = `Mengupdate progress "${card.title}" ke ${fields.progress}%`;
-  if (fields.progress === 0) desc = `Mereset progress "${card.title}" ke 0%`;
+  if (fields.progress === 100 && fields.columns_id === undefined) desc = `Menyelesaikan task "${card.title}"`;
+  if (fields.progress !== undefined && fields.progress > 0 && fields.progress < 100 && fields.columns_id === undefined) desc = `Mengupdate progress "${card.title}" ke ${fields.progress}%`;
+  if (fields.progress === 0 && fields.columns_id === undefined) desc = `Mereset progress "${card.title}" ke 0%`;
 
   await createActivityLog({
     card_id: id,
@@ -129,8 +134,14 @@ export const deleteCard = async (id, clerkId) => {
 //  ATTACHMENTS
 // =============================
 export const getAttachments = async (card_id, clerkId) => {
-  const { data: card } = await supabase.from("cards").select("columns_id").eq("id", card_id).single();
+  const { data: card } = await supabase
+    .from("cards")
+    .select("columns_id")
+    .eq("id", card_id)
+    .single();
+
   if (!card) throw new Error("Card tidak ditemukan");
+
   await getUserRoleByColumn(card.columns_id, clerkId);
 
   const { data, error } = await supabase
@@ -138,39 +149,95 @@ export const getAttachments = async (card_id, clerkId) => {
     .select("*")
     .eq("card_id", card_id)
     .order("created_at", { ascending: false });
+
   if (error) throw new Error("Gagal mengambil attachments: " + error.message);
+
   return data;
 };
 
-export const uploadAttachment = async (card_id, file_url, file_name, clerkId) => {
-  if (!file_url) throw new Error("file_url wajib diisi");
-  if (!file_name) throw new Error("file_name wajib diisi");
 
-  const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", card_id).single();
+
+// =============================
+//  UPLOAD (FIXED)
+// =============================
+export const uploadAttachment = async (card_id, file, clerkId) => {
+  if (!file) throw new Error("File wajib diisi");
+
+  const { data: card } = await supabase
+    .from("cards")
+    .select("columns_id, title")
+    .eq("id", card_id)
+    .single();
+
   if (!card) throw new Error("Card tidak ditemukan");
+
   await getUserRoleByColumn(card.columns_id, clerkId);
 
+  // path file di bucket
+  const filePath = `card-${card_id}/${Date.now()}-${file.originalname}`;
+
+  // upload ke Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from("card_attachments") // SESUAI BUCKET LO
+    .upload(filePath, file.buffer, {
+      contentType: file.mimetype,
+    });
+
+  if (uploadError) throw new Error("Upload gagal: " + uploadError.message);
+
+  // ambil public URL
+  const { data: publicUrlData } = supabase.storage
+    .from("card_attachments")
+    .getPublicUrl(filePath);
+
+  const file_url = publicUrlData.publicUrl;
+
+  // simpan ke DB
   const { data, error } = await supabase
     .from("card_attachments")
-    .insert([{ card_id, file_url, file_name, uploaded_by: clerkId }])
+    .insert([
+      {
+        card_id,
+        file_url,
+        file_name: file.originalname,
+        uploaded_by: clerkId,
+      },
+    ])
     .select()
     .single();
+
   if (error) throw new Error("Gagal upload attachment: " + error.message);
 
   await createActivityLog({
     card_id,
     clerk_user_id: clerkId,
     action: "UPLOAD_ATTACHMENT",
-    description: `Mengupload file "${file_name}" ke task "${card.title}"`,
+    description: `Mengupload file "${file.originalname}" ke task "${card.title}"`,
   });
+
   return data;
 };
 
+
+
+// =============================
+//  DELETE (FIXED)
+// =============================
 export const deleteAttachment = async (id, clerkId) => {
-  const { data: file } = await supabase.from("card_attachments").select("card_id, uploaded_by, file_name").eq("id", id).single();
+  const { data: file } = await supabase
+    .from("card_attachments")
+    .select("card_id, uploaded_by, file_name, file_url")
+    .eq("id", id)
+    .single();
+
   if (!file) throw new Error("Attachment tidak ditemukan");
 
-  const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", file.card_id).single();
+  const { data: card } = await supabase
+    .from("cards")
+    .select("columns_id, title")
+    .eq("id", file.card_id)
+    .single();
+
   if (!card) throw new Error("Card tidak ditemukan");
 
   const role = await getUserRoleByColumn(card.columns_id, clerkId);
@@ -179,7 +246,26 @@ export const deleteAttachment = async (id, clerkId) => {
     throw new Error("Kamu hanya bisa menghapus file yang kamu upload sendiri");
   }
 
-  const { error } = await supabase.from("card_attachments").delete().eq("id", id);
+  // ambil path dari URL
+  const filePath = file.file_url.split(
+    "/storage/v1/object/public/card_attachments/"
+  )[1];
+
+  // hapus dari storage
+  const { error: storageError } = await supabase.storage
+    .from("card_attachments")
+    .remove([filePath]);
+
+  if (storageError) {
+    throw new Error("Gagal hapus file di storage: " + storageError.message);
+  }
+
+  // hapus dari DB
+  const { error } = await supabase
+    .from("card_attachments")
+    .delete()
+    .eq("id", id);
+
   if (error) throw new Error("Gagal menghapus attachment: " + error.message);
 
   await createActivityLog({
@@ -188,6 +274,7 @@ export const deleteAttachment = async (id, clerkId) => {
     action: "DELETE_ATTACHMENT",
     description: `Menghapus file "${file.file_name}" dari task "${card.title}"`,
   });
+
   return true;
 };
 
