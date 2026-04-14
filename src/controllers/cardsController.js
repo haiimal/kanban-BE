@@ -60,22 +60,8 @@ export const getAttachments = async (req, res) => {
 
 export const uploadAttachment = async (req, res) => {
   try {
-    const { card_id } = req.body;
-    const file = req.file;
-
-    if (!file) {
-      return res.status(400).json({
-        success: false,
-        error: "File tidak ditemukan",
-      });
-    }
-
-    const data = await cardsService.uploadAttachment(
-      card_id,
-      file,
-      req.clerkId
-    );
-
+    const { card_id, file_url, file_name } = req.body; // ← JSON biasa
+    const data = await cardsService.uploadAttachment(card_id, file_url, file_name, req.clerkId);
     res.status(201).json({ success: true, data });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

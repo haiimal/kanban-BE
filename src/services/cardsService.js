@@ -5,12 +5,12 @@ import supabase from "../config/database.js";
 //  HELPER: ACTIVITY LOG
 // =============================
 const createActivityLog = async ({ card_id = null, project_id = null, clerk_user_id, action, description }) => {
-  await supabase.from("activity_logs").insert([{ 
-    card_id, 
+  await supabase.from("activity_logs").insert([{
+    card_id,
     project_id,
-    clerk_user_id, 
-    action, 
-    description 
+    clerk_user_id,
+    action,
+    description
   }]);
 };
 
@@ -96,7 +96,6 @@ export const updateCard = async (id, fields, clerkId) => {
   const { data, error } = await supabase.from("cards").update(fields).eq("id", id).select().single();
   if (error) throw new Error(error.message);
 
-  // Description activity log sesuai field yang diupdate
   let desc = `Mengupdate task "${card.title}"`;
   if (fields.columns_id !== undefined) desc = `Memindahkan task "${card.title}" dari ${fromColumnName} ke ${toColumnName}`;
   if (fields.progress === 100 && fields.columns_id === undefined) desc = `Menyelesaikan task "${card.title}"`;
@@ -134,14 +133,8 @@ export const deleteCard = async (id, clerkId) => {
 //  ATTACHMENTS
 // =============================
 export const getAttachments = async (card_id, clerkId) => {
-  const { data: card } = await supabase
-    .from("cards")
-    .select("columns_id")
-    .eq("id", card_id)
-    .single();
-
+  const { data: card } = await supabase.from("cards").select("columns_id").eq("id", card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
-
   await getUserRoleByColumn(card.columns_id, clerkId);
 
   const { data, error } = await supabase
@@ -149,123 +142,52 @@ export const getAttachments = async (card_id, clerkId) => {
     .select("*")
     .eq("card_id", card_id)
     .order("created_at", { ascending: false });
-
   if (error) throw new Error("Gagal mengambil attachments: " + error.message);
-
   return data;
 };
 
+export const uploadAttachment = async (card_id, file_url, file_name, clerkId) => {
+  if (!file_url) throw new Error("file_url wajib diisi");
+  if (!file_name) throw new Error("file_name wajib diisi");
 
-
-// =============================
-//  UPLOAD (FIXED)
-// =============================
-export const uploadAttachment = async (card_id, file, clerkId) => {
-  if (!file) throw new Error("File wajib diisi");
-
-  const { data: card } = await supabase
-    .from("cards")
-    .select("columns_id, title")
-    .eq("id", card_id)
-    .single();
-
+  const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
-
   await getUserRoleByColumn(card.columns_id, clerkId);
 
-  // path file di bucket
-  const filePath = `card-${card_id}/${Date.now()}-${file.originalname}`;
-
-  // upload ke Supabase Storage
-  const { error: uploadError } = await supabase.storage
-    .from("card_attachments") // SESUAI BUCKET LO
-    .upload(filePath, file.buffer, {
-      contentType: file.mimetype,
-    });
-
-  if (uploadError) throw new Error("Upload gagal: " + uploadError.message);
-
-  // ambil public URL
-  const { data: publicUrlData } = supabase.storage
-    .from("card_attachments")
-    .getPublicUrl(filePath);
-
-  const file_url = publicUrlData.publicUrl;
-
-  // simpan ke DB
   const { data, error } = await supabase
     .from("card_attachments")
-    .insert([
-      {
-        card_id,
-        file_url,
-        file_name: file.originalname,
-        uploaded_by: clerkId,
-      },
-    ])
+    .insert([{ card_id, file_url, file_name, uploaded_by: clerkId }])
     .select()
     .single();
-
   if (error) throw new Error("Gagal upload attachment: " + error.message);
 
   await createActivityLog({
     card_id,
     clerk_user_id: clerkId,
     action: "UPLOAD_ATTACHMENT",
-    description: `Mengupload file "${file.originalname}" ke task "${card.title}"`,
+    description: `Mengupload file "${file_name}" ke task "${card.title}"`,
   });
-
   return data;
 };
 
-
-
-// =============================
-//  DELETE (FIXED)
-// =============================
 export const deleteAttachment = async (id, clerkId) => {
   const { data: file } = await supabase
     .from("card_attachments")
-    .select("card_id, uploaded_by, file_name, file_url")
+    .select("card_id, uploaded_by, file_name")
     .eq("id", id)
     .single();
-
   if (!file) throw new Error("Attachment tidak ditemukan");
 
-  const { data: card } = await supabase
-    .from("cards")
-    .select("columns_id, title")
-    .eq("id", file.card_id)
-    .single();
-
+  const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", file.card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
 
   const role = await getUserRoleByColumn(card.columns_id, clerkId);
-
   if (role !== "PM" && file.uploaded_by !== clerkId) {
     throw new Error("Kamu hanya bisa menghapus file yang kamu upload sendiri");
   }
 
-  // ambil path dari URL
-  const filePath = file.file_url.split(
-    "/storage/v1/object/public/card_attachments/"
-  )[1];
-
-  // hapus dari storage
-  const { error: storageError } = await supabase.storage
-    .from("card_attachments")
-    .remove([filePath]);
-
-  if (storageError) {
-    throw new Error("Gagal hapus file di storage: " + storageError.message);
-  }
-
-  // hapus dari DB
-  const { error } = await supabase
-    .from("card_attachments")
-    .delete()
-    .eq("id", id);
-
+  // BE hanya hapus dari DB — storage dihapus oleh FE
+  const { error } = await supabase.from("card_attachments").delete().eq("id", id);
   if (error) throw new Error("Gagal menghapus attachment: " + error.message);
 
   await createActivityLog({
@@ -274,7 +196,6 @@ export const deleteAttachment = async (id, clerkId) => {
     action: "DELETE_ATTACHMENT",
     description: `Menghapus file "${file.file_name}" dari task "${card.title}"`,
   });
-
   return true;
 };
 
@@ -396,7 +317,6 @@ export const getProjectProgress = async (project_id, clerkId) => {
 
   const total = cards.length;
 
-  // Hitung jumlah card per kolom secara dinamis
   const breakdown = columns.map(col => ({
     column_id: col.id,
     column_name: col.name,
@@ -404,7 +324,6 @@ export const getProjectProgress = async (project_id, clerkId) => {
     count: cards.filter(c => c.columns_id === col.id).length,
   }));
 
-  // Done tetap berdasarkan type === "done"
   const done = breakdown
     .filter(col => col.type === "done")
     .reduce((sum, col) => sum + col.count, 0);

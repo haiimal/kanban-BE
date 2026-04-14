@@ -1,9 +1,6 @@
 // src/routes/cardsRoutes.js
 import { Router } from "express";
 import * as cardsController from "../controllers/cardsController.js";
-import multer from "multer";
-
-const upload = multer(); // memory storage
 
 const router = Router();
 
@@ -15,7 +12,7 @@ router.delete("/:id", cardsController.deleteCard);
 
 // ATTACHMENTS
 router.get("/attachments/:card_id", cardsController.getAttachments);
-router.post("/attachments", upload.single("file"), cardsController.uploadAttachment);
+router.post("/attachments", cardsController.uploadAttachment); // ← hapus multer
 router.delete("/attachments/:id", cardsController.deleteAttachment);
 
 // ASSIGN / UNASSIGN
