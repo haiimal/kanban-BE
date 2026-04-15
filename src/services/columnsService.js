@@ -100,7 +100,7 @@ export const updateColumn = async (id, name, type, clerkId) => {
   const { role, project_id } = await getUserRoleByBoard(column.boards_id, clerkId);
   if (role !== "PM") throw new Error("Hanya PM yang bisa mengedit column.");
 
-  const updateFields = { name };
+  const updateFields = { type };
   if (type) updateFields.type = type;
 
   const { data, error } = await supabase
@@ -116,7 +116,7 @@ export const updateColumn = async (id, name, type, clerkId) => {
     project_id,
     clerk_user_id: clerkId,
     action: "UPDATE_COLUMN",
-    description: `Mengubah kolom "${column.type}" menjadi "${type}"`,
+    description: `Mengubah kolom "${column.name}" menjadi "${type}"`,
   });
 
   return data;
