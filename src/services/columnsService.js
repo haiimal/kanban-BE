@@ -116,7 +116,7 @@ export const updateColumn = async (id, name, type, clerkId) => {
     project_id,
     clerk_user_id: clerkId,
     action: "UPDATE_COLUMN",
-    description: `Mengubah kolom "${column.name}" menjadi "${name}"`,
+    description: `Mengubah kolom "${column.type}" menjadi "${type}"`,
   });
 
   return data;
