@@ -87,11 +87,13 @@ export const updateColumn = async (id, name, type, clerkId) => {
   if (!id || !name) throw new Error("id dan name wajib diisi.");
 
   const validTypes = ["todo", "in_progress", "done", "other"];
-  if (type && !validTypes.includes(type)) throw new Error("Type tidak valid. Pilih: todo, in_progress, done, other");
+  if (type && !validTypes.includes(type)) {
+    throw new Error("Type tidak valid. Pilih: todo, in_progress, done, other");
+  }
 
   const { data: column, error: colErr } = await supabase
     .from("columns")
-    .select("boards_id, name")
+    .select("boards_id, name, type") // ambil type lama
     .eq("id", id)
     .single();
 
@@ -100,7 +102,10 @@ export const updateColumn = async (id, name, type, clerkId) => {
   const { role, project_id } = await getUserRoleByBoard(column.boards_id, clerkId);
   if (role !== "PM") throw new Error("Hanya PM yang bisa mengedit column.");
 
-  const updateFields = { type };
+  // ambil type lama
+  const oldType = column.type;
+
+  const updateFields = {};
   if (type) updateFields.type = type;
 
   const { data, error } = await supabase
@@ -112,12 +117,15 @@ export const updateColumn = async (id, name, type, clerkId) => {
 
   if (error) throw new Error(error.message);
 
-  await createActivityLog({
-    project_id,
-    clerk_user_id: clerkId,
-    action: "UPDATE_COLUMN",
-    description: `Mengubah kolom "${name}" dari "${type}" menjadi "${type}"`,
-  });
+  // log hanya kalau berubah
+  if (type && oldType !== type) {
+    await createActivityLog({
+      project_id,
+      clerk_user_id: clerkId,
+      action: "UPDATE_COLUMN",
+      description: `Mengubah kolom "${column.name}" dari "${oldType}" menjadi "${type}"`,
+    });
+  }
 
   return data;
 };
