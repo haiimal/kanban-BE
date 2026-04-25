@@ -1,5 +1,6 @@
 // src/services/cardsService.js
 import supabase from "../config/database.js";
+import { createNotification } from "./notificationsService.js";
 
 // =============================
 //  HELPER: ACTIVITY LOG
@@ -161,6 +162,24 @@ export const uploadAttachment = async (card_id, file_url, file_name, clerkId) =>
     .single();
   if (error) throw new Error("Gagal upload attachment: " + error.message);
 
+  // ← Kirim notif ke semua member yang di-assign ke card ini
+  const { data: assignedMembers } = await supabase
+    .from("card_members").select("clerk_user_id").eq("card_id", card_id);
+
+  if (assignedMembers && assignedMembers.length > 0) {
+    await Promise.all(
+      assignedMembers.map(m =>
+        createNotification({
+          recipient_clerk_id: m.clerk_user_id,
+          sender_clerk_id: clerkId,
+          type: "ATTACHMENT",
+          message: `File "${file_name}" diupload ke task "${card.title}"`,
+          card_id,
+        })
+      )
+    );
+  }
+
   await createActivityLog({
     card_id,
     clerk_user_id: clerkId,
@@ -211,16 +230,14 @@ export const assignUser = async (card_id, user_id, clerkId) => {
   if (role !== "PM") throw new Error("Hanya PM yang bisa assign user");
 
   const { data: targetMember } = await supabase
-    .from("project_member")
-    .select("clerk_user_id")
+    .from("project_member").select("clerk_user_id")
     .eq("project_id", board.project_id)
     .eq("clerk_user_id", user_id)
     .maybeSingle();
   if (!targetMember) throw new Error("User tidak terdaftar sebagai member project ini");
 
   const { data: alreadyAssigned } = await supabase
-    .from("card_members")
-    .select("id")
+    .from("card_members").select("id")
     .eq("card_id", card_id)
     .eq("clerk_user_id", user_id)
     .maybeSingle();
@@ -230,6 +247,15 @@ export const assignUser = async (card_id, user_id, clerkId) => {
     .from("card_members")
     .insert([{ card_id, clerk_user_id: user_id, assigned_by: clerkId }]);
   if (error) throw new Error("Gagal assign user: " + error.message);
+
+  // ← Kirim notifikasi ke user yang di-assign
+  await createNotification({
+    recipient_clerk_id: user_id,
+    sender_clerk_id: clerkId,
+    type: "ASSIGN",
+    message: `Kamu ditugaskan ke task "${card.title}"`,
+    card_id,
+  });
 
   await createActivityLog({
     card_id,

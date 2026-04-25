@@ -11,6 +11,9 @@ import boardsRoutes from "./routes/boardsRoutes.js";
 import columnsRoutes from "./routes/columnsRoutes.js";
 import cardsRoutes from "./routes/cardsRoutes.js";
 import activityLogRoutes from "./routes/activitylogRoutes.js";
+import notificationsRoutes from "./routes/notificationsRoutes.js";
+import commentsRoutes from "./routes/commentsRoutes.js";
+import reportsRoutes from "./routes/reportsRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -76,6 +79,9 @@ app.use("/api/boards", boardsRoutes);
 app.use("/api/columns", columnsRoutes);
 app.use("/api/cards", cardsRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
+app.use("/api/notification", notificationsRoutes);
+app.use("/api/comment", commentsRoutes);
+app.use("/api/report", reportsRoutes);
 
 // =====================================
 // ERROR HANDLER
