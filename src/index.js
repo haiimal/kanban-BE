@@ -13,7 +13,7 @@ import cardsRoutes from "./routes/cardsRoutes.js";
 import activityLogRoutes from "./routes/activitylogRoutes.js";
 import notificationsRoutes from "./routes/notificationsRoutes.js";
 import commentsRoutes from "./routes/commentsRoutes.js";
-import reportsRoutes from "./routes/reportsRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -81,7 +81,7 @@ app.use("/api/cards", cardsRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
 app.use("/api/notification", notificationsRoutes);
 app.use("/api/comment", commentsRoutes);
-app.use("/api/report", reportsRoutes);
+app.use("/api/report", reportRoutes);
 
 // =====================================
 // ERROR HANDLER
