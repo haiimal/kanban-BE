@@ -1,5 +1,4 @@
 import supabase from "../config/database.js";
-import { createActivityLog } from "./cardsService.js"; // reuse helper
 
 const getUserRoleByColumn = async (columns_id, clerkId) => {
   const { data: column } = await supabase.from("columns").select("boards_id").eq("id", columns_id).single();
