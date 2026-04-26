@@ -22,11 +22,11 @@ export const getProjectById = async (req, res) => {
 };
 
 export const createProject = async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, deadline } = req.body; // ← tambah deadline
   const clerkId = req.clerkId;
 
   try {
-    const project = await projectService.createProject(name, description, clerkId);
+    const project = await projectService.createProject(name, description, deadline, clerkId); // ← fix
     res.status(201).json({
       success: true,
       message: "Project created successfully and user set as PM",
@@ -40,10 +40,10 @@ export const createProject = async (req, res) => {
 export const updateProject = async (req, res) => {
   const clerkId = req.clerkId;
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, description, deadline } = req.body; // ← tambah deadline
 
   try {
-    const data = await projectService.updateProject(id, name, description, clerkId);
+    const data = await projectService.updateProject(id, name, description, deadline, clerkId); // ← fix
     res.json({ success: true, message: "Project updated successfully", data });
   } catch (err) {
     res.status(err.statusCode || 500).json({ success: false, error: err.message });
