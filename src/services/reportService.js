@@ -44,7 +44,7 @@ export const getProjectReport = async (project_id, clerkId) => {
   const { data: cards } = columnIds.length > 0
     ? await supabase
         .from("cards")
-        .select("id, title, description, columns_id, progress, due_date, created_at, label")
+        .select("id, title, description, columns_id, progress, due_date, created_at")
         .in("columns_id", columnIds)
         .order("created_at", { ascending: true })
     : { data: [] };
@@ -125,7 +125,6 @@ export const getProjectReport = async (project_id, clerkId) => {
       id: card.id,
       title: card.title,
       description: card.description || null,
-      label: card.label || null,
       column_name: col.name,
       column_type: col.type,
       progress: card.progress || 0,
