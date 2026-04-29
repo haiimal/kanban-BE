@@ -25,44 +25,44 @@ const PORT = process.env.PORT || 3002;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      callback(null, origin);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-clerk-user-id",
-    ],
-  })
-);
+// =====================================
+// CORS — handle preflight SEBELUM semua middleware lain
+// =====================================
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    callback(null, origin);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
+};
 
+app.use(cors(corsOptions));
 
-app.options("*", cors());
-
-
+// Tangani preflight OPTIONS secara manual SEBELUM Clerk middleware
+// Ini yang fix CORS error — preflight tidak butuh auth
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
+    res.header("Access-Control-Allow-Credentials", "true");
+    return res.status(200).end();
+  }
+  next();
+});
 
 // =====================================
 // CLERK AUTH (token wajib)
 // =====================================
 app.use(clerkMiddleware());
-// console.log("Clerk middleware aktif (token required)");
 
 // =====================================
 // CUSTOM MIDDLEWARE
 // =====================================
 app.use(clerkIdInjectorWithLogging);
 app.use(performanceLogger);
-
-
-// app.use((req, res, next) => {
-//   req.clerkId = "user_test_123";
-//   next();
-// });
 
 // =====================================
 // ROUTES
