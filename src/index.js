@@ -28,10 +28,17 @@ app.use(express.urlencoded({ extended: true }));
 // =====================================
 // CORS — handle preflight SEBELUM semua middleware lain
 // =====================================
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://kanban-fe.vercel.app", // ganti dengan domain FE kamu di Vercel
+];
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    callback(null, origin);
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
