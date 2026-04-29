@@ -19,6 +19,13 @@ import ownerRoutes from "./routes/ownerRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// =====================================
+// GLOBAL MIDDLEWARE
+// =====================================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 
 // =====================================
 // CORS — handle preflight SEBELUM semua middleware lain
@@ -29,7 +36,12 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: true, // Mengizinkan semua origin (otomatis memantulkan origin dari request)
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
@@ -37,11 +49,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// =====================================
-// GLOBAL MIDDLEWARE
-// =====================================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 
 // =====================================
