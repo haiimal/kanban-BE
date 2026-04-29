@@ -2,6 +2,10 @@
 import { verifyToken } from "@clerk/backend";
 
 export const clerkIdInjectorWithLogging = async (req, res, next) => {
+
+  // Skip validasi token untuk preflight request
+  if (req.method === "OPTIONS") return next();
+
   try {
     const authHeader = req.headers.authorization;
 
