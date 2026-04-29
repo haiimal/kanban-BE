@@ -40,25 +40,14 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
 };
 
+app.use(cors(corsOptions));
+
 // =====================================
 // GLOBAL MIDDLEWARE
 // =====================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors(corsOptions));
 
-// Tangani preflight OPTIONS secara manual SEBELUM Clerk middleware
-// Ini yang fix CORS error — preflight tidak butuh auth
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
-    res.header("Access-Control-Allow-Credentials", "true");
-    return res.status(200).end();
-  }
-  next();
-});
 
 // =====================================
 // CLERK AUTH (token wajib)
@@ -93,6 +82,18 @@ app.use("/api/notification", notificationsRoutes);
 app.use("/api/comment", commentsRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/owner", ownerRoutes);
+
+
+// Middleware Error Handler
+app.use((err, req, res, next) => {
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "CORS Not Allowed" });
+  }
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+
+
 
 // =====================================
 // ERROR HANDLER
