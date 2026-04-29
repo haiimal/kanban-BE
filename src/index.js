@@ -19,12 +19,6 @@ import ownerRoutes from "./routes/ownerRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// =====================================
-// GLOBAL MIDDLEWARE
-// =====================================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors(corsOptions));
 
 // =====================================
 // CORS — handle preflight SEBELUM semua middleware lain
@@ -46,6 +40,12 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
 };
 
+// =====================================
+// GLOBAL MIDDLEWARE
+// =====================================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors(corsOptions));
 
 // Tangani preflight OPTIONS secara manual SEBELUM Clerk middleware
 // Ini yang fix CORS error — preflight tidak butuh auth
