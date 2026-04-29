@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 3002;
 // =====================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors(corsOptions));
+
 
 
 
@@ -36,17 +36,21 @@ const allowedOrigins = [
   "https://kanban-fe.vercel.app", // ganti dengan domain FE kamu di Vercel
 ];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
-};
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      callback(null, origin);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clerk-user-id",
+    ],
+  })
+);
 
 
 
