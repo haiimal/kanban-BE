@@ -32,7 +32,7 @@ app.use(
       callback(null, origin);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -41,6 +41,8 @@ app.use(
   })
 );
 
+
+app.options("*", cors());
 
 
 
