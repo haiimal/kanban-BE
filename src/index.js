@@ -24,6 +24,7 @@ const PORT = process.env.PORT || 3002;
 // =====================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors(corsOptions));
 
 
 
@@ -47,7 +48,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
 };
 
-app.use(cors(corsOptions));
 
 
 
