@@ -40,13 +40,20 @@ app.use(
   })
 );
 
-// Tangkap preflight SEBELUM Clerk — preflight tidak bawa token
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
-  res.header("Access-Control-Allow-Credentials", "true");
-  return res.sendStatus(200);
+// =====================================
+// PREFLIGHT — WAJIB SEBELUM CLERK
+// app.use (bukan app.options) supaya
+// middleware ini jalan SEBELUM Clerk
+// =====================================
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
+    res.header("Access-Control-Allow-Credentials", "true");
+    return res.sendStatus(200);
+  }
+  next();
 });
 
 // =====================================
