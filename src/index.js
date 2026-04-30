@@ -20,13 +20,24 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 // =====================================
-// GLOBAL MIDDLEWARE
+// STEP 1 — TANGKAP PREFLIGHT PALING AWAL
+// Harus di atas SEMUA middleware termasuk cors & Clerk
+// Preflight tidak bawa token → Clerk akan reject kalau tidak dicegat dulu
 // =====================================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
+  res.header("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // =====================================
-// CORS
+// STEP 2 — CORS (backup)
 // =====================================
 app.use(
   cors({
@@ -41,28 +52,18 @@ app.use(
 );
 
 // =====================================
-// PREFLIGHT — WAJIB SEBELUM CLERK
-// app.use (bukan app.options) supaya
-// middleware ini jalan SEBELUM Clerk
+// STEP 3 — BODY PARSER
 // =====================================
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
-    res.header("Access-Control-Allow-Credentials", "true");
-    return res.sendStatus(200);
-  }
-  next();
-});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // =====================================
-// CLERK AUTH (token wajib)
+// STEP 4 — CLERK AUTH (token wajib)
 // =====================================
 app.use(clerkMiddleware());
 
 // =====================================
-// CUSTOM MIDDLEWARE
+// STEP 5 — CUSTOM MIDDLEWARE
 // =====================================
 app.use(clerkIdInjectorWithLogging);
 app.use(performanceLogger);
@@ -118,6 +119,6 @@ export default app;
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
   });
 }
