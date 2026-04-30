@@ -20,25 +20,11 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 // =====================================
-// STEP 1 — TANGKAP PREFLIGHT PALING AWAL
-// Harus di atas SEMUA middleware termasuk cors & Clerk
-// Preflight tidak bawa token → Clerk akan reject kalau tidak dicegat dulu
+// GLOBAL MIDDLEWARE
 // =====================================
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
-  res.header("Access-Control-Allow-Credentials", "true");
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-// =====================================
-// STEP 2 — CORS (backup)
-// =====================================
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -47,23 +33,27 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clerk-user-id",
+    ],
   })
 );
 
-// =====================================
-// STEP 3 — BODY PARSER
-// =====================================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Tangkap preflight sebelum Clerk — preflight tidak bawa token
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
 // =====================================
-// STEP 4 — CLERK AUTH (token wajib)
+// CLERK AUTH (token wajib)
 // =====================================
 app.use(clerkMiddleware());
 
 // =====================================
-// STEP 5 — CUSTOM MIDDLEWARE
+// CUSTOM MIDDLEWARE
 // =====================================
 app.use(clerkIdInjectorWithLogging);
 app.use(performanceLogger);
@@ -119,6 +109,6 @@ export default app;
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
   });
 }
