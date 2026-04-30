@@ -25,17 +25,9 @@ const PORT = process.env.PORT || 3002;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-
-
 // =====================================
-// CORS — handle preflight SEBELUM semua middleware lain
+// CORS
 // =====================================
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://kanban-fe.vercel.app", // ganti dengan domain FE kamu di Vercel
-];
-
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -44,16 +36,18 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-clerk-user-id",
-    ],
+    allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
   })
 );
 
-
-
+// Tangkap preflight SEBELUM Clerk — preflight tidak bawa token
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-clerk-user-id");
+  res.header("Access-Control-Allow-Credentials", "true");
+  return res.sendStatus(200);
+});
 
 // =====================================
 // CLERK AUTH (token wajib)
@@ -88,18 +82,6 @@ app.use("/api/notification", notificationsRoutes);
 app.use("/api/comment", commentsRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/owner", ownerRoutes);
-
-
-// Middleware Error Handler
-app.use((err, req, res, next) => {
-  if (err.message === "Not allowed by CORS") {
-    return res.status(403).json({ error: "CORS Not Allowed" });
-  }
-  console.error(err.stack);
-  res.status(500).json({ error: "Something went wrong!" });
-});
-
-
 
 // =====================================
 // ERROR HANDLER
