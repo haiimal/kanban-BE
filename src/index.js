@@ -14,7 +14,6 @@ import activityLogRoutes from "./routes/activitylogRoutes.js";
 import notificationsRoutes from "./routes/notificationsRoutes.js";
 import commentsRoutes from "./routes/commentsRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
-import ownerRoutes from "./routes/ownerRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -32,7 +31,7 @@ app.use(
       callback(null, origin);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -41,22 +40,26 @@ app.use(
   })
 );
 
-// Tangkap preflight sebelum Clerk — preflight tidak bawa token
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+
+
 
 // =====================================
 // CLERK AUTH (token wajib)
 // =====================================
 app.use(clerkMiddleware());
+// console.log("Clerk middleware aktif (token required)");
 
 // =====================================
 // CUSTOM MIDDLEWARE
 // =====================================
 app.use(clerkIdInjectorWithLogging);
 app.use(performanceLogger);
+
+
+// app.use((req, res, next) => {
+//   req.clerkId = "user_test_123";
+//   next();
+// });
 
 // =====================================
 // ROUTES
@@ -79,7 +82,6 @@ app.use("/api/activity-logs", activityLogRoutes);
 app.use("/api/notification", notificationsRoutes);
 app.use("/api/comment", commentsRoutes);
 app.use("/api/report", reportRoutes);
-app.use("/api/owner", ownerRoutes);
 
 // =====================================
 // ERROR HANDLER
