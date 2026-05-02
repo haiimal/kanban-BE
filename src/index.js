@@ -2,12 +2,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-
-import {
-  clerkIdInjectorWithLogging,
-  performanceLogger,
-} from "./middleware/index.js";
-
+import { clerkMiddleware } from "@clerk/express";
+import { clerkIdInjectorWithLogging, performanceLogger } from "./middleware/index.js";
 import clerkRoutes from "./routes/clerkRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import projectMemberRoutes from "./routes/projectMemberRoutes.js";
@@ -18,146 +14,86 @@ import activityLogRoutes from "./routes/activitylogRoutes.js";
 import notificationsRoutes from "./routes/notificationsRoutes.js";
 import commentsRoutes from "./routes/commentsRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
-import ownerRoutes from "./routes/ownerRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
 // =====================================
-// CORS (Express 5 Safe)
-// =====================================
-const corsOptions = {
-  origin: "http://localhost:3000",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "x-clerk-user-id",
-  ],
-};
-
-app.use(cors(corsOptions));
-
-// Handle preflight manually (Express 5 compatible)
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET,POST,PUT,DELETE,OPTIONS"
-    );
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, x-clerk-user-id"
-    );
-
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
-// =====================================
-// BODY PARSER
+// GLOBAL MIDDLEWARE
 // =====================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// =====================================
-// LOGGER
-// =====================================
-app.use(performanceLogger);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      callback(null, origin);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clerk-user-id",
+    ],
+  })
+);
+
+
+
 
 // =====================================
-// PUBLIC ROUTES
+// CLERK AUTH (token wajib)
+// =====================================
+app.use(clerkMiddleware());
+// console.log("Clerk middleware aktif (token required)");
+
+// =====================================
+// CUSTOM MIDDLEWARE
+// =====================================
+app.use(clerkIdInjectorWithLogging);
+app.use(performanceLogger);
+
+
+// app.use((req, res, next) => {
+//   req.clerkId = "user_test_123";
+//   next();
+// });
+
+// =====================================
+// ROUTES
 // =====================================
 app.get("/", (req, res) => {
-  res.send("Kanban API is running successfully!");
+  res.send("Kanban API is running successfully on Vercel!");
 });
 
 app.get("/health", (req, res) => {
-  res.json({
-    status: "OK",
-    message: "Server is running",
-  });
+  res.json({ status: "OK", message: "Server is running" });
 });
 
 app.use("/api/clerk-users", clerkRoutes);
-
-// =====================================
-// PRIVATE ROUTES (Need Token)
-// =====================================
-app.use(
-  "/api/projects",
-  clerkIdInjectorWithLogging,
-  projectRoutes
-);
-
-app.use(
-  "/api/project-members",
-  clerkIdInjectorWithLogging,
-  projectMemberRoutes
-);
-
-app.use(
-  "/api/boards",
-  clerkIdInjectorWithLogging,
-  boardsRoutes
-);
-
-app.use(
-  "/api/columns",
-  clerkIdInjectorWithLogging,
-  columnsRoutes
-);
-
-app.use(
-  "/api/cards",
-  clerkIdInjectorWithLogging,
-  cardsRoutes
-);
-
-app.use(
-  "/api/activity-logs",
-  clerkIdInjectorWithLogging,
-  activityLogRoutes
-);
-
-app.use(
-  "/api/notification",
-  clerkIdInjectorWithLogging,
-  notificationsRoutes
-);
-
-app.use(
-  "/api/comment",
-  clerkIdInjectorWithLogging,
-  commentsRoutes
-);
-
-app.use(
-  "/api/report",
-  clerkIdInjectorWithLogging,
-  reportRoutes
-);
-
-app.use(
-  "/api/owner",
-  clerkIdInjectorWithLogging,
-  ownerRoutes
-);
+app.use("/api/projects", projectRoutes);
+app.use("/api/project-members", projectMemberRoutes);
+app.use("/api/boards", boardsRoutes);
+app.use("/api/columns", columnsRoutes);
+app.use("/api/cards", cardsRoutes);
+app.use("/api/activity-logs", activityLogRoutes);
+app.use("/api/notification", notificationsRoutes);
+app.use("/api/comment", commentsRoutes);
+app.use("/api/report", reportRoutes);
 
 // =====================================
 // ERROR HANDLER
 // =====================================
 app.use((err, req, res, next) => {
-  console.error("Global Error:", err);
-
-  res.status(err.statusCode || 500).json({
-    success: false,
-    error: err.message || "Internal server error",
+  console.error("Error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
   });
 });
 
@@ -165,10 +101,7 @@ app.use((err, req, res, next) => {
 // 404
 // =====================================
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: "Route not found",
-  });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // =====================================
