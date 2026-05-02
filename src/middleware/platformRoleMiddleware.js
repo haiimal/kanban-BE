@@ -46,8 +46,8 @@ export const requirePlatformPM = async (req, res, next) => {
 
     if (error) throw new Error(error.message);
 
-    if (!data || data.role !== "PM") {
-      return res.status(403).json({ error: "Forbidden - hanya PM yang bisa membuat project" });
+    if (!data || data.role !== "ADMIN") {
+      return res.status(403).json({ error: "Forbidden - hanya ADMIN yang bisa membuat project" });
     }
 
     next();
