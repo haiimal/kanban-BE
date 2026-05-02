@@ -2,6 +2,9 @@
 import { verifyToken } from "@clerk/backend";
 
 export const clerkIdInjectorWithLogging = async (req, res, next) => {
+
+  if (req.method === "OPTIONS") return next();
+
   try {
     const authHeader = req.headers.authorization;
 
