@@ -19,11 +19,6 @@ import ownerRoutes from "./routes/ownerRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// =====================================
-// GLOBAL MIDDLEWARE
-// =====================================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
@@ -42,17 +37,11 @@ app.use(
 );
 
 
-app.options("*", cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    callback(null, origin);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
-}));
-
-
+// =====================================
+// GLOBAL MIDDLEWARE
+// =====================================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 // =====================================
