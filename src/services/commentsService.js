@@ -32,7 +32,17 @@ export const createComment = async (card_id, content, clerkId) => {
 
   const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
-  await getUserRoleByColumn(card.columns_id, clerkId);
+  const role = await getUserRoleByColumn(card.columns_id, clerkId);
+
+  if (role !== "PM") {
+    const { data: assigned } = await supabase
+      .from("card_members")
+      .select("id")
+      .eq("card_id", card_id)
+      .eq("clerk_user_id", clerkId)
+      .maybeSingle();
+    if (!assigned) throw new Error("Kamu tidak di-assign ke task ini");
+  }
 
   const { data, error } = await supabase
     .from("comments")

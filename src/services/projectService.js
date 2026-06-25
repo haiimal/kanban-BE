@@ -50,6 +50,15 @@ export const createProject = async (name, description, deadline, clerkId) => {
   if (!name) throw new Error("Nama project wajib diisi");
   if (!clerkId) throw new Error("User belum terautentikasi");
 
+  // ← TAMBAH: deadline tidak boleh di masa lalu
+  if (deadline) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(deadline) < today) {
+      throw new Error("Deadline tidak boleh di masa lalu");
+    }
+  }
+
   // Buat project
   const { data: project, error: projectError } = await supabase
     .from("project")

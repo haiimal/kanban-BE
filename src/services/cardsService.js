@@ -46,6 +46,16 @@ export const getCardsByColumn = async (columns_id, clerkId) => {
 // CREATE CARD (PM)
 // =============================
 export const createCard = async (columns_id, title, description, due_date, clerkId) => {
+
+  // ← TAMBAH validasi
+  if (!title || !title.trim()) throw new Error("Judul task wajib diisi");
+  if (!due_date) throw new Error("Deadline task wajib diisi");
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (new Date(due_date) < today) throw new Error("Deadline tidak boleh di masa lalu");
+
+
   const role = await getUserRoleByColumn(columns_id, clerkId);
   if (role !== "PM") throw new Error("Hanya PM");
 
@@ -72,12 +82,27 @@ export const updateCard = async (id, fields, clerkId) => {
   const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", id).single();
   const role = await getUserRoleByColumn(card.columns_id, clerkId);
 
+  // ← TAMBAH: title tidak boleh dikosongkan
+  if (fields.title !== undefined && !fields.title.trim()) {
+    throw new Error("Judul task tidak boleh kosong");
+  }
+
   if (fields.progress !== undefined && (fields.progress < 0 || fields.progress > 100)) throw new Error("Progress 0-100");
 
   if (role !== "PM") {
     const allowed = ["description", "columns_id", "progress"];
     if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
   }
+
+  if (fields.columns_id !== undefined) {
+      const { data: assigned } = await supabase
+        .from("card_members")
+        .select("id")
+        .eq("card_id", id)
+        .eq("clerk_user_id", clerkId)
+        .maybeSingle();
+      if (!assigned) throw new Error("Kamu tidak di-assign ke task ini, tidak bisa memindahkan");
+    }
 
   // Ambil nama kolom asal dan tujuan kalau card digeser
   let fromColumnName = null;
@@ -153,7 +178,17 @@ export const uploadAttachment = async (card_id, file_url, file_name, clerkId) =>
 
   const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", card_id).single();
   if (!card) throw new Error("Card tidak ditemukan");
-  await getUserRoleByColumn(card.columns_id, clerkId);
+  const role = await getUserRoleByColumn(card.columns_id, clerkId);
+
+  if (role !== "PM") {
+    const { data: assigned } = await supabase
+      .from("card_members")
+      .select("id")
+      .eq("card_id", card_id)
+      .eq("clerk_user_id", clerkId)
+      .maybeSingle();
+    if (!assigned) throw new Error("Kamu tidak di-assign ke task ini");
+  }
 
   const { data, error } = await supabase
     .from("card_attachments")
