@@ -33,6 +33,24 @@ const getUserRoleByColumn = async (columns_id, clerkId) => {
 };
 
 // =============================
+//  HELPER: CEK IZIN DRAG & DROP CARD
+//  - PM        : bebas pindahin card kemana aja
+//  - Non-PM    : wajib di-assign (ada di card_members) ke card ini dulu
+// =============================
+const canDragDropCard = async (card_id, role, clerkId) => {
+  if (role === "PM") return true; // PM selalu boleh
+
+  const { data: assigned } = await supabase
+    .from("card_members")
+    .select("id")
+    .eq("card_id", card_id)
+    .eq("clerk_user_id", clerkId)
+    .maybeSingle();
+
+  return !!assigned;
+};
+
+// =============================
 // GET CARDS BY COLUMN
 // =============================
 export const getCardsByColumn = async (columns_id, clerkId) => {
@@ -84,20 +102,15 @@ export const updateCard = async (id, fields, clerkId) => {
   if (fields.progress !== undefined && (fields.progress < 0 || fields.progress > 100)) throw new Error("Progress 0-100");
 
   if (role !== "PM") {
-  const allowed = ["description", "columns_id", "progress"];
-  if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
-
-  // ← PINDAH ke sini: hanya berlaku untuk non-PM
-  if (fields.columns_id !== undefined) {
-    const { data: assigned } = await supabase
-      .from("card_members")
-      .select("id")
-      .eq("card_id", id)
-      .eq("clerk_user_id", clerkId)
-      .maybeSingle();
-    if (!assigned) throw new Error("Kamu tidak di-assign ke task ini, tidak bisa memindahkan");
+    const allowed = ["description", "columns_id", "progress"];
+    if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
   }
-}
+
+  // Cek izin drag & drop khusus saat card dipindah ke kolom lain
+  if (fields.columns_id !== undefined) {
+    const boleh = await canDragDropCard(id, role, clerkId);
+    if (!boleh) throw new Error("Kamu tidak di-assign ke task ini, tidak bisa memindahkan");
+  }
 
   // Ambil nama kolom asal dan tujuan kalau card digeser
   let fromColumnName = null;
