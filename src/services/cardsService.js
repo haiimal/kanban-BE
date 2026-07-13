@@ -49,12 +49,6 @@ export const createCard = async (columns_id, title, description, due_date, clerk
 
   // ← TAMBAH validasi
   if (!title || !title.trim()) throw new Error("Judul task wajib diisi");
-  if (!due_date) throw new Error("Deadline task wajib diisi");
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (new Date(due_date) < today) throw new Error("Deadline tidak boleh di masa lalu");
-
 
   const role = await getUserRoleByColumn(columns_id, clerkId);
   if (role !== "PM") throw new Error("Hanya PM");
