@@ -84,19 +84,20 @@ export const updateCard = async (id, fields, clerkId) => {
   if (fields.progress !== undefined && (fields.progress < 0 || fields.progress > 100)) throw new Error("Progress 0-100");
 
   if (role !== "PM") {
-    const allowed = ["description", "columns_id", "progress"];
-    if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
-  }
+  const allowed = ["description", "columns_id", "progress"];
+  if (!Object.keys(fields).every(k => allowed.includes(k))) throw new Error("Tidak diizinkan");
 
+  // ← PINDAH ke sini: hanya berlaku untuk non-PM
   if (fields.columns_id !== undefined) {
-      const { data: assigned } = await supabase
-        .from("card_members")
-        .select("id")
-        .eq("card_id", id)
-        .eq("clerk_user_id", clerkId)
-        .maybeSingle();
-      if (!assigned) throw new Error("Kamu tidak di-assign ke task ini, tidak bisa memindahkan");
-    }
+    const { data: assigned } = await supabase
+      .from("card_members")
+      .select("id")
+      .eq("card_id", id)
+      .eq("clerk_user_id", clerkId)
+      .maybeSingle();
+    if (!assigned) throw new Error("Kamu tidak di-assign ke task ini, tidak bisa memindahkan");
+  }
+}
 
   // Ambil nama kolom asal dan tujuan kalau card digeser
   let fromColumnName = null;
