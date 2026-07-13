@@ -1,15 +1,22 @@
 import supabase from "../config/database.js";
 
 // Helper kirim notif
-export const createNotification = async ({ recipient_clerk_id, sender_clerk_id, type, message, card_id = null }) => {
+export const createNotification = async ({ recipient_clerk_id, sender_clerk_id, type, message, card_id = null, project_id = null }) => {
   if (recipient_clerk_id === sender_clerk_id) return; // jangan kirim notif ke diri sendiri
-  await supabase.from("notifications").insert([{
+
+  const { error } = await supabase.from("notifications").insert([{
     recipient_clerk_id,
     sender_clerk_id,
     type,
     message,
     card_id,
+    project_id, // ← FIX: sebelumnya project_id tidak pernah disimpan, jadi notif tidak bisa difilter per-project & bisa gagal insert kalau kolomnya NOT NULL
   }]);
+
+  // ← FIX: sebelumnya error insert di-swallow diam-diam sehingga notif "hilang" tanpa jejak
+  if (error) {
+    console.error("Gagal membuat notifikasi:", error.message);
+  }
 };
 
 // =============================
@@ -34,6 +41,7 @@ export const notifyCardParticipants = async ({ card_id, project_id, actorClerkId
             type,
             message,
             card_id,
+            project_id, // ← FIX: diteruskan, sebelumnya hilang
           })
         )
       );
@@ -54,6 +62,7 @@ export const notifyCardParticipants = async ({ card_id, project_id, actorClerkId
             type,
             message,
             card_id,
+            project_id, // ← FIX: diteruskan, sebelumnya hilang
           })
         )
       );
@@ -61,13 +70,19 @@ export const notifyCardParticipants = async ({ card_id, project_id, actorClerkId
   }
 };
 
-// Ambil semua notif milik user
-export const getNotifications = async (clerkId) => {
-  const { data, error } = await supabase
+// Ambil semua notif milik user (bisa difilter per project)
+export const getNotifications = async (clerkId, projectId = null) => {
+  let query = supabase
     .from("notifications")
     .select("*")
-    .eq("recipient_clerk_id", clerkId)
-    .order("created_at", { ascending: false });
+    .eq("recipient_clerk_id", clerkId);
+
+  // ← FIX: sebelumnya query param project_id dari FE diabaikan total di backend
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data;
 };
@@ -90,13 +105,20 @@ export const markAsRead = async (id, clerkId) => {
   return true;
 };
 
-// Tandai semua notif sudah dibaca
-export const markAllAsRead = async (clerkId) => {
-  const { error } = await supabase
+// Tandai semua notif sudah dibaca (bisa dibatasi per project)
+export const markAllAsRead = async (clerkId, projectId = null) => {
+  let query = supabase
     .from("notifications")
     .update({ is_read: true })
     .eq("recipient_clerk_id", clerkId)
     .eq("is_read", false);
+
+  // ← FIX: sebelumnya query param project_id dari FE diabaikan total di backend
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
   if (error) throw new Error(error.message);
   return true;
 };

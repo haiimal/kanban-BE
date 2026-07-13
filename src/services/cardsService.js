@@ -300,6 +300,7 @@ export const assignUser = async (card_id, user_id, clerkId) => {
     type: "ASSIGN",
     message: `Kamu ditugaskan ke task "${card.title}"`,
     card_id,
+    project_id: board.project_id, // ← FIX: sebelumnya tidak diikutkan
   });
 
   await createActivityLog({
