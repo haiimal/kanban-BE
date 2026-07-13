@@ -1,6 +1,6 @@
 // src/services/cardsService.js
 import supabase from "../config/database.js";
-import { createNotification } from "./notificationsService.js";
+import { createNotification, notifyCardParticipants } from "./notificationsService.js";
 
 // =============================
 //  HELPER: ACTIVITY LOG
@@ -30,6 +30,15 @@ const getUserRoleByColumn = async (columns_id, clerkId) => {
 
   if (!member) throw new Error("Kamu bukan anggota project ini.");
   return member.role;
+};
+
+// =============================
+//  HELPER: AMBIL project_id DARI columns_id
+// =============================
+const getProjectIdByColumn = async (columns_id) => {
+  const { data: column } = await supabase.from("columns").select("boards_id").eq("id", columns_id).single();
+  const { data: board } = await supabase.from("boards").select("project_id").eq("id", column.boards_id).single();
+  return board.project_id;
 };
 
 // =============================
@@ -205,23 +214,16 @@ export const uploadAttachment = async (card_id, file_url, file_name, clerkId) =>
     .single();
   if (error) throw new Error("Gagal upload attachment: " + error.message);
 
-  // ← Kirim notif ke semua member yang di-assign ke card ini
-  const { data: assignedMembers } = await supabase
-    .from("card_members").select("clerk_user_id").eq("card_id", card_id);
-
-  if (assignedMembers && assignedMembers.length > 0) {
-    await Promise.all(
-      assignedMembers.map(m =>
-        createNotification({
-          recipient_clerk_id: m.clerk_user_id,
-          sender_clerk_id: clerkId,
-          type: "ATTACHMENT",
-          message: `File "${file_name}" diupload ke task "${card.title}"`,
-          card_id,
-        })
-      )
-    );
-  }
+  // ← Kirim notif ke "lawan": PM upload -> notif assigned member, member upload -> notif PM
+  const project_id = await getProjectIdByColumn(card.columns_id);
+  await notifyCardParticipants({
+    card_id,
+    project_id,
+    actorClerkId: clerkId,
+    actorRole: role,
+    type: "ATTACHMENT",
+    message: `File "${file_name}" diupload ke task "${card.title}"`,
+  });
 
   await createActivityLog({
     card_id,

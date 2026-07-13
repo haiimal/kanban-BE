@@ -1,4 +1,5 @@
 import supabase from "../config/database.js";
+import { notifyCardParticipants } from "./notificationsService.js";
 
 const getUserRoleByColumn = async (columns_id, clerkId) => {
   const { data: column } = await supabase.from("columns").select("boards_id").eq("id", columns_id).single();
@@ -11,6 +12,15 @@ const getUserRoleByColumn = async (columns_id, clerkId) => {
     .maybeSingle();
   if (!member) throw new Error("Kamu bukan anggota project ini.");
   return member.role;
+};
+
+// =============================
+//  HELPER: AMBIL project_id DARI columns_id
+// =============================
+const getProjectIdByColumn = async (columns_id) => {
+  const { data: column } = await supabase.from("columns").select("boards_id").eq("id", columns_id).single();
+  const { data: board } = await supabase.from("boards").select("project_id").eq("id", column.boards_id).single();
+  return board.project_id;
 };
 
 export const getCommentsByCard = async (card_id, clerkId) => {
@@ -50,6 +60,17 @@ export const createComment = async (card_id, content, clerkId) => {
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  // ← Kirim notif ke "lawan": PM komen -> notif assigned member, member komen -> notif PM
+  const project_id = await getProjectIdByColumn(card.columns_id);
+  await notifyCardParticipants({
+    card_id,
+    project_id,
+    actorClerkId: clerkId,
+    actorRole: role,
+    type: "COMMENT",
+    message: `Komentar baru di task "${card.title}"`,
+  });
 
   return data;
 };

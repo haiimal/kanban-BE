@@ -12,6 +12,55 @@ export const createNotification = async ({ recipient_clerk_id, sender_clerk_id, 
   }]);
 };
 
+// =============================
+//  KIRIM NOTIF KE "LAWAN" DARI YANG NGE-ACTION
+//  - Kalau yang action PM        -> notif ke semua assigned member (card_members)
+//  - Kalau yang action non-PM    -> notif ke semua PM di project itu
+//  Dipakai buat comment & attachment di card yang sudah di-assign.
+// =============================
+export const notifyCardParticipants = async ({ card_id, project_id, actorClerkId, actorRole, type, message }) => {
+  if (actorRole === "PM") {
+    const { data: assignedMembers } = await supabase
+      .from("card_members")
+      .select("clerk_user_id")
+      .eq("card_id", card_id);
+
+    if (assignedMembers && assignedMembers.length > 0) {
+      await Promise.all(
+        assignedMembers.map((m) =>
+          createNotification({
+            recipient_clerk_id: m.clerk_user_id,
+            sender_clerk_id: actorClerkId,
+            type,
+            message,
+            card_id,
+          })
+        )
+      );
+    }
+  } else {
+    const { data: pmMembers } = await supabase
+      .from("project_member")
+      .select("clerk_user_id")
+      .eq("project_id", project_id)
+      .eq("role", "PM");
+
+    if (pmMembers && pmMembers.length > 0) {
+      await Promise.all(
+        pmMembers.map((pm) =>
+          createNotification({
+            recipient_clerk_id: pm.clerk_user_id,
+            sender_clerk_id: actorClerkId,
+            type,
+            message,
+            card_id,
+          })
+        )
+      );
+    }
+  }
+};
+
 // Ambil semua notif milik user
 export const getNotifications = async (clerkId) => {
   const { data, error } = await supabase
