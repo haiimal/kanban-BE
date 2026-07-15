@@ -1,5 +1,6 @@
 // src/services/columnsService.js
 import supabase from "../config/database.js";
+import { notifyProjectMembers } from "./notificationsService.js";
 
 // =============================
 //  HELPER: ACTIVITY LOG
@@ -77,6 +78,13 @@ export const createColumn = async (boards_id, name, type = "other", clerkId) => 
     description: `Menambahkan kolom baru "${name}"`,
   });
 
+  await notifyProjectMembers({
+    project_id,
+    actorClerkId: clerkId,
+    type: "CREATE_COLUMN",
+    message: `Kolom baru "${name}" ditambahkan`,
+  });
+
   return data;
 };
 
@@ -125,6 +133,13 @@ export const updateColumn = async (id, name, type, clerkId) => {
       action: "UPDATE_COLUMN",
       description: `Mengubah kolom "${column.name}" dari "${oldType}" menjadi "${type}"`,
     });
+
+    await notifyProjectMembers({
+      project_id,
+      actorClerkId: clerkId,
+      type: "UPDATE_COLUMN",
+      message: `Kolom "${column.name}" diubah dari "${oldType}" menjadi "${type}"`,
+    });
   }
 
   return data;
@@ -155,6 +170,13 @@ export const deleteColumn = async (id, clerkId) => {
     clerk_user_id: clerkId,
     action: "DELETE_COLUMN",
     description: `Menghapus kolom "${column.name}"`,
+  });
+
+  await notifyProjectMembers({
+    project_id,
+    actorClerkId: clerkId,
+    type: "DELETE_COLUMN",
+    message: `Kolom "${column.name}" telah dihapus`,
   });
 
   return true;

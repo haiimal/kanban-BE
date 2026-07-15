@@ -1,6 +1,6 @@
 // src/services/cardsService.js
 import supabase from "../config/database.js";
-import { createNotification, notifyCardParticipants } from "./notificationsService.js";
+import { createNotification, notifyCardParticipants, notifyProjectMembers } from "./notificationsService.js";
 
 // =============================
 //  HELPER: ACTIVITY LOG
@@ -93,6 +93,17 @@ export const createCard = async (columns_id, title, description, due_date, clerk
     action: "CREATE_CARD",
     description: `Menambahkan task baru "${title}"`,
   });
+
+  // ← Kirim notif ke semua member project (task baru belum punya assigned member)
+  const project_id = await getProjectIdByColumn(columns_id);
+  await notifyProjectMembers({
+    project_id,
+    actorClerkId: clerkId,
+    type: "CREATE_CARD",
+    message: `Task baru "${title}" ditambahkan`,
+    card_id: data.id,
+  });
+
   return data;
 };
 
@@ -151,6 +162,18 @@ export const updateCard = async (id, fields, clerkId) => {
     action: "UPDATE_CARD",
     description: desc,
   });
+
+  // ← Kirim notif ke "lawan": PM update -> notif assigned member, member update -> notif PM
+  const project_id = await getProjectIdByColumn(card.columns_id);
+  await notifyCardParticipants({
+    card_id: id,
+    project_id,
+    actorClerkId: clerkId,
+    actorRole: role,
+    type: "UPDATE_CARD",
+    message: desc,
+  });
+
   return data;
 };
 
@@ -161,6 +184,20 @@ export const deleteCard = async (id, clerkId) => {
   const { data: card } = await supabase.from("cards").select("columns_id, title").eq("id", id).single();
   const role = await getUserRoleByColumn(card.columns_id, clerkId);
   if (role !== "PM") throw new Error("Hanya PM");
+
+  // ← Kirim notif ke assigned member SEBELUM card dihapus (card_members ikut terhapus)
+  // link_card_id: null karena kolom card_id di tabel notifications punya ON DELETE CASCADE —
+  // kalau tetap di-link ke card yang mau dihapus, notif ini ikut lenyap begitu card-nya dihapus.
+  const project_id = await getProjectIdByColumn(card.columns_id);
+  await notifyCardParticipants({
+    card_id: id,
+    project_id,
+    actorClerkId: clerkId,
+    actorRole: role,
+    type: "DELETE_CARD",
+    message: `Task "${card.title}" telah dihapus`,
+    link_card_id: null,
+  });
 
   await supabase.from("cards").delete().eq("id", id);
   await createActivityLog({
@@ -297,10 +334,10 @@ export const assignUser = async (card_id, user_id, clerkId) => {
   await createNotification({
     recipient_clerk_id: user_id,
     sender_clerk_id: clerkId,
+    project_id: board.project_id,
     type: "ASSIGN",
     message: `Kamu ditugaskan ke task "${card.title}"`,
     card_id,
-    project_id: board.project_id, // ← FIX: sebelumnya tidak diikutkan
   });
 
   await createActivityLog({
@@ -342,6 +379,16 @@ export const unassignUser = async (card_id, user_id, clerkId) => {
     .eq("card_id", card_id)
     .eq("clerk_user_id", user_id);
   if (error) throw new Error("Gagal unassign user: " + error.message);
+
+  // ← Kirim notifikasi ke user yang di-unassign
+  await createNotification({
+    recipient_clerk_id: user_id,
+    sender_clerk_id: clerkId,
+    project_id: board.project_id,
+    type: "UNASSIGN",
+    message: `Kamu dilepas dari task "${card.title}"`,
+    card_id,
+  });
 
   await createActivityLog({
     card_id,
